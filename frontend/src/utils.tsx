@@ -125,8 +125,7 @@ export const handleApiErr = (error: any): string => {
     console.log(error.response.headers);
     // Server may already include an "Error:" prefix. Normalize to a single prefix.
     let detail = String(error.response.data?.detail ?? "");
-    detail = detail.replace(/^\s*Error:\s*/i, "");
-    errMsg = "Error: " + detail;
+    errMsg = detail;
   } else if (error.request) {
     // The request was made but no response was received
     // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
@@ -137,7 +136,6 @@ export const handleApiErr = (error: any): string => {
     // Something happened in setting up the request that triggered an Error
     console.log(error.message);
     let msg = String(error.message ?? "");
-    msg = msg.replace(/^\s*Error:\s*/i, "");
     errMsg = "Error: " + msg;
   } else {
     console.log("Error: Unkown Error");
