@@ -1,9 +1,4 @@
-import {
-  ListItem,
-  ListItemAvatar,
-  ListItemProps,
-  ListItemText,
-} from "@mui/material";
+import { ListItem, ListItemProps, ListItemText } from "@mui/material";
 import { LinkWidget } from "./LinkWidget";
 
 export const ListUserItem = ({

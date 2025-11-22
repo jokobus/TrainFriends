@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, Request, Response, Depends, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
@@ -9,8 +8,21 @@ from typing import Set, Optional
 from datetime import datetime
 import sqlite3
 from pathlib import Path
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="TrainFriends - Simple Server")
+app = FastAPI(
+    title="TrainFriends - Simple Server",
+    middleware=[
+        Middleware(
+            CORSMiddleware,
+            allow_origins=["http://localhost:5173"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    ],
+)
 
 # Simple SQLite DB (file stored next to this module)
 # Default path (can be overridden with --data flag when running as a script)
@@ -328,7 +340,7 @@ async def list_friends(username: str = Depends(get_current_username)):
 	cur = conn.execute("SELECT friend FROM friends WHERE user = ? ORDER BY friend", (username,))
 	friends = [r["friend"] for r in cur.fetchall()]
 	conn.close()
-	return {"friends": friends}
+	return friends
 
 
 @app.post("/location", response_model=GenericResponse)

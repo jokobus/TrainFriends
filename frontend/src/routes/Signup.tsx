@@ -26,13 +26,6 @@ export const Signup = (): JSX.Element => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // HACK: the equal sign at the end of the secret is sometimes not recognized as part of the link
-  const secretFromParam = searchParams.get("secret");
-  const secret =
-    secretFromParam && !secretFromParam.endsWith("=")
-      ? secretFromParam + "="
-      : secretFromParam;
-
   const handleChangeSD = (e: React.ChangeEvent<HTMLInputElement>) => {
     // limit size of username to 20 characters
     if (e.target.name === "name" && e.target.value.length > userNameMaxLength) {
@@ -47,12 +40,7 @@ export const Signup = (): JSX.Element => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !secret ||
-      !signupData.name ||
-      !signupData.password ||
-      !confirmPassword
-    ) {
+    if (!signupData.name || !signupData.password || !confirmPassword) {
       setError("Please fill out all fields.");
       return;
     }
@@ -119,7 +107,7 @@ export const Signup = (): JSX.Element => {
           Sign up
         </Button>
         {
-          succeeded && "Logg in" // TODO: reroute to login
+          succeeded && "Logging in" // TODO: reroute to login
         }
         {error && <p style={{ color: "red" }}>Error: {error}</p>}
         {info && <p style={{ color: "green" }}>{info}</p>}

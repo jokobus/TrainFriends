@@ -34,9 +34,6 @@ export const Login = () => {
     }
   }, [authState.isAuthenticated, state?.path, navigate]);
 
-  // FIXME: forgot password option (auf passwortmanager hinweisen)
-
-  // FIXME: Add validation
   return (
     <Stack spacing={2} alignItems="center">
       <form onSubmit={handleLogin}>
@@ -64,10 +61,7 @@ export const Login = () => {
           </Button>
         </Stack>
       </form>
-      <Button
-        component={Link}
-        to="/signup" // FIXME: preserve location state
-      >
+      <Button component={Link} to="/signup">
         Sign up instead
       </Button>
     </Stack>

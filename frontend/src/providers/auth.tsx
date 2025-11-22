@@ -37,21 +37,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchAuthState = useCallback(async () => {
     try {
       const response = await Api.authCheckGet();
+      console.log("Auth check response:", response);
+      if (response.status !== 200) {
+        console.log("User is not authenticated.");
+        return;
+      }
       setAuthState({
         isAuthenticated: true,
         userName: response.data.username,
       });
     } catch (error: any) {
       if (error.response?.status === 401) {
-        if (authState.isAuthenticated) {
-          console.log("User is not authenticated anymore. Logging out.");
-          setAuthState({ isAuthenticated: false, userName: null });
-        }
+        console.log("User is not authenticated anymore. Logging out.");
+        setAuthState({ isAuthenticated: false, userName: null });
       } else {
         throw error;
       }
     }
-  }, [authState, setAuthState]);
+  }, [setAuthState]);
 
   useEffect(() => {
     fetchAuthState();
@@ -69,14 +72,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             password,
           },
         });
+        console.log("Auth check response:", response);
+        if (response.status !== 200) {
+          return [false, "Login failed"];
+        }
         setAuthState({
           isAuthenticated: true,
           userName: username,
         });
         return [true, ""];
       } catch (error: any) {
+        console.log(error);
         if (error.response) {
-          const msg = error.response.data;
+          const msg = error.response.data.detail;
           return [false, msg];
         } else {
           return [false, error.message];

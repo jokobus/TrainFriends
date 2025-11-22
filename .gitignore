@@ -2,3 +2,4 @@
 node_modules
 *.db
 __pycache__
+frontend/dist/

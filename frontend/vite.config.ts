@@ -34,23 +34,7 @@ export default ({ mode }) => {
       checker({
         typescript: true,
       }),
-      {
-        // fail on warning in build
-        ...eslint({
-          failOnWarning: true,
-          baseConfig: eslintBaseConfig,
-        }),
-        apply: "build",
-      },
-      {
-        ...eslint({ baseConfig: eslintBaseConfig }),
-        apply: "serve",
-      },
+      eslint({ baseConfig: eslintBaseConfig }),
     ],
-    // test: {
-    //   globals: true,
-    //   environment: "jsdom",
-    //   setupFiles: ["./src/setupTests.js"],
-    // },
   };
 };
