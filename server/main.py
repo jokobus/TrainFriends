@@ -343,6 +343,29 @@ async def list_friends(username: str = Depends(get_current_username)):
 	return friends
 
 
+@app.delete("/friends/{friend_username}", response_model=GenericResponse)
+async def delete_friend(friend_username: str, username: str = Depends(get_current_username)):
+	"""Remove an existing friend connection between the current user and the given username.
+
+	This removes both directional rows from the `friends` table. If the users are not
+	friends, a failure response is returned.
+	"""
+	conn = get_conn()
+	cur = conn.cursor()
+	# check existing friendship (current user -> friend)
+	cur.execute("SELECT 1 FROM friends WHERE user = ? AND friend = ?", (username, friend_username))
+	if not cur.fetchone():
+		conn.close()
+		return GenericResponse(success=False, message="Not friends")
+
+	# delete both directions (if present)
+	cur.execute("DELETE FROM friends WHERE user = ? AND friend = ?", (username, friend_username))
+	cur.execute("DELETE FROM friends WHERE user = ? AND friend = ?", (friend_username, username))
+	conn.commit()
+	conn.close()
+	return GenericResponse(success=True, message="Friend removed")
+
+
 @app.post("/location", response_model=GenericResponse)
 async def push_location(loc: LocationPush, username: str = Depends(get_current_username)):
 	ts = datetime.utcnow().isoformat()

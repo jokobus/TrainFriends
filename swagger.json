@@ -348,6 +348,42 @@
           }
         }
       }
+    },
+    "/friends/{friend_username}": {
+      "delete": {
+        "summary": "Delete a friend connection",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "friend_username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Username of the friend to remove"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Friend removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericSuccess"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Friend not found"
+          }
+        }
+      }
     }
   },
   "components": {

@@ -162,6 +162,39 @@ curl.exe -s -X POST http://localhost:8000/friend-request/<rid>/cancel -H "Cookie
 
 This deletes the pending friend request row. The endpoint returns a JSON success message.
 
+### Delete a friend (unfriend)
+
+Once two users are friends, either user can remove the relationship. The API exposes
+`DELETE /friends/{friend_username}` which removes both directional rows in the `friends` table.
+
+Example (PowerShell / curl.exe): remove `bob` from Alice's friend list (replace <alice_session>):
+
+```powershell
+curl.exe -s -X DELETE http://localhost:8000/friends/bob -H "Cookie: session_id=<alice_session>"
+```
+
+Expected responses:
+
+- If the users were friends:
+
+```
+{"success":true,"message":"Friend removed"}
+```
+
+- If they were not friends:
+
+```
+{"success":false,"message":"Not friends"}
+```
+
+You can verify the change by listing friends after the delete call:
+
+```powershell
+curl.exe -s http://localhost:8000/friends -H "Cookie: session_id=<alice_session>"
+```
+
+If the unfriend succeeded the removed username will no longer be present in the returned array.
+
 ### Notes and quick troubleshooting
 - If you get "ModuleNotFoundError: No module named 'fastapi'" install dependencies (conda, pip, etc.). 
 - If the server fails to start due to DB locking on heavy write load, stop the server and retry (SQLite is fine for demo/light use).
