@@ -69,8 +69,8 @@ export const AppBarWidget = () => {
   );
 
   return (
-    <AppBar color="primary" style={{ zIndex: 1000, position: "sticky" }}>
-      <Toolbar>
+    <AppBar color="primary" style={{ zIndex: 1000, position: "sticky"}}>
+      <Toolbar style={{height: 100, alignItems: 'flex-end', paddingBottom: 5 }}>
         <LinkWidget to={"/"}>
           <img src={logo} alt="Logo" style={{ height: 40, marginRight: 16 }} />
         </LinkWidget>

@@ -20,6 +20,7 @@ export default function MainMenu() {
         width: "100%",
         position: "sticky",
         bottom: 0,
+        paddingBottom: 1,
         borderTopLeftRadius: 8,
         borderTopRightRadius: 8,
       }}
