@@ -102,7 +102,7 @@ Expected SSE output in Terminal B (Bob):
 data: {"from":"alice","latitude":48.1371,"longitude":11.5754,"ts":"..."}
 ```
 
-If you see only the initial "connected" message and no location event, verify that the friend relationship was established in step 4.
+If you see only the initial "connected" detail and no location event, verify that the friend relationship was established in step 4.
 
 ## Further functionalities (authCheck, logout, friend-requests, reject, cancel)
 
@@ -152,7 +152,7 @@ Sample response shape:
 curl.exe -s -X POST http://localhost:8000/friend-request/<rid>/reject -H "Cookie: session_id=<bob_session>"
 ```
 
-This will set the request's status to `rejected` (row remains in DB). The endpoint returns a JSON success message.
+This will set the request's status to `rejected` (row remains in DB). The endpoint returns a JSON success detail.
 
 ### Cancel a pending friend request (sender action)
 
@@ -160,40 +160,7 @@ This will set the request's status to `rejected` (row remains in DB). The endpoi
 curl.exe -s -X POST http://localhost:8000/friend-request/<rid>/cancel -H "Cookie: session_id=<alice_session>"
 ```
 
-This deletes the pending friend request row. The endpoint returns a JSON success message.
-
-### Delete a friend (unfriend)
-
-Once two users are friends, either user can remove the relationship. The API exposes
-`DELETE /friends/{friend_username}` which removes both directional rows in the `friends` table.
-
-Example (PowerShell / curl.exe): remove `bob` from Alice's friend list (replace <alice_session>):
-
-```powershell
-curl.exe -s -X DELETE http://localhost:8000/friends/bob -H "Cookie: session_id=<alice_session>"
-```
-
-Expected responses:
-
-- If the users were friends:
-
-```
-{"success":true,"message":"Friend removed"}
-```
-
-- If they were not friends:
-
-```
-{"success":false,"message":"Not friends"}
-```
-
-You can verify the change by listing friends after the delete call:
-
-```powershell
-curl.exe -s http://localhost:8000/friends -H "Cookie: session_id=<alice_session>"
-```
-
-If the unfriend succeeded the removed username will no longer be present in the returned array.
+This deletes the pending friend request row. The endpoint returns a JSON success detail.
 
 ### Notes and quick troubleshooting
 - If you get "ModuleNotFoundError: No module named 'fastapi'" install dependencies (conda, pip, etc.). 

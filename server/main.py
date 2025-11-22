@@ -40,7 +40,7 @@ class SignupRequest(BaseModel):
 
 class GenericResponse(BaseModel):
 	success: bool
-	message: Optional[str] = None
+	detail: Optional[str] = None
 	id: Optional[str] = None
 
 
@@ -159,13 +159,13 @@ async def signup(req: SignupRequest):
 	cur.execute("SELECT 1 FROM users WHERE username = ?", (req.username,))
 	if cur.fetchone():
 		conn.close()
-		return GenericResponse(success=False, message="Username already exists")
+		raise HTTPException(status_code=400, detail="Username already exists")
 	cur.execute(
 		"INSERT INTO users(username, password) VALUES (?, ?)", (req.username, req.password)
 	)
 	conn.commit()
 	conn.close()
-	return GenericResponse(success=True, message="Account created.")
+	return GenericResponse(success=True, detail="Account created.")
 
 
 @app.post("/login")
@@ -178,7 +178,7 @@ async def login(req: LoginRequest, response: Response):
 		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 	sid = create_session(req.username)
 	response.set_cookie(key="session_id", value=sid, httponly=True, path="/")
-	return {"success": True, "message": "Logged in."}
+	return {"success": True, "detail": "Logged in."}
 
 
 @app.post("/logout")
@@ -192,7 +192,7 @@ async def logout(request: Request, response: Response, username: str = Depends(g
 		conn.close()
 	# clear cookie on client
 	response.delete_cookie("session_id", path="/")
-	return {"success": True, "message": "Logged out."}
+	return {"success": True, "detail": "Logged out."}
 
 
 @app.get("/authCheck")
@@ -205,7 +205,7 @@ async def auth_check(username: str = Depends(get_current_username)):
 async def send_friend_request(body: FriendRequestBody, username: str = Depends(get_current_username)):
 	target = body.friendUsername
 	if target == username:
-		return GenericResponse(success=False, message="Cannot friend yourself")
+		raise HTTPException(status_code=400, detail="Cannot friend yourself")
 	conn = get_conn()
 	cur = conn.cursor()
 	cur.execute("SELECT 1 FROM users WHERE username = ?", (target,))
@@ -216,7 +216,7 @@ async def send_friend_request(body: FriendRequestBody, username: str = Depends(g
 	cur.execute("SELECT 1 FROM friends WHERE user = ? AND friend = ?", (username, target))
 	if cur.fetchone():
 		conn.close()
-		return GenericResponse(success=False, message="Already friends")
+		raise HTTPException(status_code=400, detail="Already friends")
 	rid = uuid.uuid4().hex
 	cur.execute(
 		"INSERT INTO friend_requests(id, from_user, to_user, status, created) VALUES (?, ?, ?, 'pending', ?)",
@@ -224,7 +224,7 @@ async def send_friend_request(body: FriendRequestBody, username: str = Depends(g
 	)
 	conn.commit()
 	conn.close()
-	return GenericResponse(success=True, message="Request created", id=rid)
+	return GenericResponse(success=True, detail="Request created", id=rid)
 
 
 @app.post("/friend-request/{request_id}/accept", response_model=GenericResponse)
@@ -241,7 +241,7 @@ async def accept_friend_request(request_id: str, username: str = Depends(get_cur
 		raise HTTPException(status_code=403, detail="Not allowed")
 	if fr["status"] != "pending":
 		conn.close()
-		return GenericResponse(success=False, message=f"Request already {fr['status']}")
+		raise HTTPException(status_code=400, detail=f"Request already {fr['status']}")
 	cur.execute("UPDATE friend_requests SET status = 'accepted' WHERE id = ?", (request_id,))
 	# add both directions
 	from_user = fr["from_user"]
@@ -249,7 +249,7 @@ async def accept_friend_request(request_id: str, username: str = Depends(get_cur
 	cur.execute("INSERT OR IGNORE INTO friends(user, friend) VALUES (?, ?)", (from_user, username))
 	conn.commit()
 	conn.close()
-	return GenericResponse(success=True, message="Friend added")
+	return GenericResponse(success=True, detail="Friend added")
 
 
 @app.post("/friend-request/{request_id}/reject", response_model=GenericResponse)
@@ -270,11 +270,11 @@ async def reject_friend_request(request_id: str, username: str = Depends(get_cur
 		raise HTTPException(status_code=403, detail="Not allowed")
 	if fr["status"] != "pending":
 		conn.close()
-		return GenericResponse(success=False, message=f"Request already {fr['status']}")
+		raise HTTPException(status_code=400, detail=f"Request already {fr['status']}")
 	cur.execute("DELETE FROM friend_requests WHERE id = ?", (request_id,))
 	conn.commit()
 	conn.close()
-	return GenericResponse(success=True, message="Request rejected")
+	return GenericResponse(success=True, detail="Request rejected")
 
 
 @app.post("/friend-request/{request_id}/cancel", response_model=GenericResponse)
@@ -295,11 +295,11 @@ async def cancel_friend_request(request_id: str, username: str = Depends(get_cur
 		raise HTTPException(status_code=403, detail="Not allowed")
 	if fr["status"] != "pending":
 		conn.close()
-		return GenericResponse(success=False, message=f"Request already {fr['status']}")
+		raise HTTPException(status_code=400, detail=f"Request already {fr['status']}")
 	cur.execute("DELETE FROM friend_requests WHERE id = ?", (request_id,))
 	conn.commit()
 	conn.close()
-	return GenericResponse(success=True, message="Request canceled")
+	return GenericResponse(success=True, detail="Request canceled")
 
 
 @app.get("/friend-requests")
@@ -343,29 +343,6 @@ async def list_friends(username: str = Depends(get_current_username)):
 	return friends
 
 
-@app.delete("/friends/{friend_username}", response_model=GenericResponse)
-async def delete_friend(friend_username: str, username: str = Depends(get_current_username)):
-	"""Remove an existing friend connection between the current user and the given username.
-
-	This removes both directional rows from the `friends` table. If the users are not
-	friends, a failure response is returned.
-	"""
-	conn = get_conn()
-	cur = conn.cursor()
-	# check existing friendship (current user -> friend)
-	cur.execute("SELECT 1 FROM friends WHERE user = ? AND friend = ?", (username, friend_username))
-	if not cur.fetchone():
-		conn.close()
-		return GenericResponse(success=False, message="Not friends")
-
-	# delete both directions (if present)
-	cur.execute("DELETE FROM friends WHERE user = ? AND friend = ?", (username, friend_username))
-	cur.execute("DELETE FROM friends WHERE user = ? AND friend = ?", (friend_username, username))
-	conn.commit()
-	conn.close()
-	return GenericResponse(success=True, message="Friend removed")
-
-
 @app.post("/location", response_model=GenericResponse)
 async def push_location(loc: LocationPush, username: str = Depends(get_current_username)):
 	ts = datetime.utcnow().isoformat()
@@ -394,7 +371,7 @@ async def push_location(loc: LocationPush, username: str = Depends(get_current_u
 			except asyncio.QueueFull:
 				pass
 
-	return GenericResponse(success=True, message="Location stored")
+	return GenericResponse(success=True, detail="Location stored")
 
 
 @app.get("/events")
@@ -404,7 +381,7 @@ async def events(request: Request, username: str = Depends(get_current_username)
 
 	async def event_generator():
 		try:
-			yield "event: message\ndata: {}\n\n".format(json.dumps({"message": "connected", "ts": datetime.utcnow().isoformat()}))
+			yield "event: detail\ndata: {}\n\n".format(json.dumps({"detail": "connected", "ts": datetime.utcnow().isoformat()}))
 			while True:
 				if await request.is_disconnected():
 					break

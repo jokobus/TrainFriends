@@ -15,7 +15,7 @@ import { LoginResponse } from './api';
 
 const instance: LoginResponse = {
     success,
-    message,
+    detail,
 };
 ```
 
