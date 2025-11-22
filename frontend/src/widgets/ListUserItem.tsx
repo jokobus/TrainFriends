@@ -9,9 +9,7 @@ export const ListUserItem = ({
 }) => {
   return (
     <ListItem key={userName} {...props}>
-      <LinkWidget to={"/user/" + userName}>
-        <ListItemText primary={userName} sx={{ fontWeight: "bold" }} />
-      </LinkWidget>
+      <ListItemText primary={userName} sx={{ fontWeight: "bold" }} />
     </ListItem>
   );
 };

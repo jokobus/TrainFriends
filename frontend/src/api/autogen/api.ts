@@ -58,6 +58,19 @@ export interface FriendRequest {
 /**
  * 
  * @export
+ * @interface FriendRequestCreate
+ */
+export interface FriendRequestCreate {
+    /**
+     * 
+     * @type {string}
+     * @memberof FriendRequestCreate
+     */
+    'friendUsername': string;
+}
+/**
+ * 
+ * @export
  * @interface FriendRequests
  */
 export interface FriendRequests {
@@ -229,6 +242,44 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary Send a friend request
+         * @param {FriendRequestCreate} friendRequestCreate 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        friendRequestCreatePost: async (friendRequestCreate: FriendRequestCreate, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'friendRequestCreate' is not null or undefined
+            assertParamExists('friendRequestCreatePost', 'friendRequestCreate', friendRequestCreate)
+            const localVarPath = `/friend-request/create`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication cookieAuth required
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(friendRequestCreate, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Accept a pending friend request
          * @param {string} id Friend request identifier
          * @param {*} [options] Override http request option.
@@ -329,44 +380,6 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * 
-         * @summary Send a friend request
-         * @param {FriendRequest} friendRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        friendRequestPost: async (friendRequest: FriendRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'friendRequest' is not null or undefined
-            assertParamExists('friendRequestPost', 'friendRequest', friendRequest)
-            const localVarPath = `/friend-request`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            // authentication cookieAuth required
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(friendRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -603,6 +616,19 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Send a friend request
+         * @param {FriendRequestCreate} friendRequestCreate 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async friendRequestCreatePost(friendRequestCreate: FriendRequestCreate, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GenericSuccess>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.friendRequestCreatePost(friendRequestCreate, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.friendRequestCreatePost']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Accept a pending friend request
          * @param {string} id Friend request identifier
          * @param {*} [options] Override http request option.
@@ -638,19 +664,6 @@ export const DefaultApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.friendRequestIdRejectPost(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.friendRequestIdRejectPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
-        /**
-         * 
-         * @summary Send a friend request
-         * @param {FriendRequest} friendRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async friendRequestPost(friendRequest: FriendRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GenericSuccess>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.friendRequestPost(friendRequest, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['DefaultApi.friendRequestPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -749,6 +762,16 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @summary Send a friend request
+         * @param {DefaultApiFriendRequestCreatePostRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        friendRequestCreatePost(requestParameters: DefaultApiFriendRequestCreatePostRequest, options?: RawAxiosRequestConfig): AxiosPromise<GenericSuccess> {
+            return localVarFp.friendRequestCreatePost(requestParameters.friendRequestCreate, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Accept a pending friend request
          * @param {DefaultApiFriendRequestIdAcceptPostRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
@@ -776,16 +799,6 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         friendRequestIdRejectPost(requestParameters: DefaultApiFriendRequestIdRejectPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<GenericSuccess> {
             return localVarFp.friendRequestIdRejectPost(requestParameters.id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * 
-         * @summary Send a friend request
-         * @param {DefaultApiFriendRequestPostRequest} requestParameters Request parameters.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        friendRequestPost(requestParameters: DefaultApiFriendRequestPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<GenericSuccess> {
-            return localVarFp.friendRequestPost(requestParameters.friendRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -848,6 +861,20 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
 };
 
 /**
+ * Request parameters for friendRequestCreatePost operation in DefaultApi.
+ * @export
+ * @interface DefaultApiFriendRequestCreatePostRequest
+ */
+export interface DefaultApiFriendRequestCreatePostRequest {
+    /**
+     * 
+     * @type {FriendRequestCreate}
+     * @memberof DefaultApiFriendRequestCreatePost
+     */
+    readonly friendRequestCreate: FriendRequestCreate
+}
+
+/**
  * Request parameters for friendRequestIdAcceptPost operation in DefaultApi.
  * @export
  * @interface DefaultApiFriendRequestIdAcceptPostRequest
@@ -887,20 +914,6 @@ export interface DefaultApiFriendRequestIdRejectPostRequest {
      * @memberof DefaultApiFriendRequestIdRejectPost
      */
     readonly id: string
-}
-
-/**
- * Request parameters for friendRequestPost operation in DefaultApi.
- * @export
- * @interface DefaultApiFriendRequestPostRequest
- */
-export interface DefaultApiFriendRequestPostRequest {
-    /**
-     * 
-     * @type {FriendRequest}
-     * @memberof DefaultApiFriendRequestPost
-     */
-    readonly friendRequest: FriendRequest
 }
 
 /**
@@ -965,6 +978,18 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @summary Send a friend request
+     * @param {DefaultApiFriendRequestCreatePostRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public friendRequestCreatePost(requestParameters: DefaultApiFriendRequestCreatePostRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).friendRequestCreatePost(requestParameters.friendRequestCreate, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Accept a pending friend request
      * @param {DefaultApiFriendRequestIdAcceptPostRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
@@ -997,18 +1022,6 @@ export class DefaultApi extends BaseAPI {
      */
     public friendRequestIdRejectPost(requestParameters: DefaultApiFriendRequestIdRejectPostRequest, options?: RawAxiosRequestConfig) {
         return DefaultApiFp(this.configuration).friendRequestIdRejectPost(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * 
-     * @summary Send a friend request
-     * @param {DefaultApiFriendRequestPostRequest} requestParameters Request parameters.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof DefaultApi
-     */
-    public friendRequestPost(requestParameters: DefaultApiFriendRequestPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).friendRequestPost(requestParameters.friendRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

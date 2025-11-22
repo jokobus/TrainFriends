@@ -5,10 +5,10 @@ All URIs are relative to *https://api.example.com*
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
 |[**authCheckGet**](#authcheckget) | **GET** /authCheck | Check if the user is authenticated and receive user info in that case|
+|[**friendRequestCreatePost**](#friendrequestcreatepost) | **POST** /friend-request/create | Send a friend request|
 |[**friendRequestIdAcceptPost**](#friendrequestidacceptpost) | **POST** /friend-request/{id}/accept | Accept a pending friend request|
 |[**friendRequestIdCancelPost**](#friendrequestidcancelpost) | **POST** /friend-request/{id}/cancel | Cancel a pending friend request|
 |[**friendRequestIdRejectPost**](#friendrequestidrejectpost) | **POST** /friend-request/{id}/reject | Reject a pending friend request|
-|[**friendRequestPost**](#friendrequestpost) | **POST** /friend-request | Send a friend request|
 |[**friendRequestsGet**](#friendrequestsget) | **GET** /friend-requests | Get frend requests for the authenticated user|
 |[**friendsGet**](#friendsget) | **GET** /friends | List usernames of confirmed friends|
 |[**locationPost**](#locationpost) | **POST** /location | Push current location|
@@ -57,6 +57,57 @@ This endpoint does not have any parameters.
 |-------------|-------------|------------------|
 |**200** | User is authenticated |  -  |
 |**401** | User is not authenticated |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **friendRequestCreatePost**
+> GenericSuccess friendRequestCreatePost(friendRequestCreate)
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration,
+    FriendRequestCreate
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let friendRequestCreate: FriendRequestCreate; //
+
+const { status, data } = await apiInstance.friendRequestCreatePost(
+    friendRequestCreate
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **friendRequestCreate** | **FriendRequestCreate**|  | |
+
+
+### Return type
+
+**GenericSuccess**
+
+### Authorization
+
+[cookieAuth](../README.md#cookieAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Request created |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -210,57 +261,6 @@ const { status, data } = await apiInstance.friendRequestIdRejectPost(
 |-------------|-------------|------------------|
 |**200** | Request rejected |  -  |
 |**404** | Request not found |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **friendRequestPost**
-> GenericSuccess friendRequestPost(friendRequest)
-
-
-### Example
-
-```typescript
-import {
-    DefaultApi,
-    Configuration,
-    FriendRequest
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new DefaultApi(configuration);
-
-let friendRequest: FriendRequest; //
-
-const { status, data } = await apiInstance.friendRequestPost(
-    friendRequest
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **friendRequest** | **FriendRequest**|  | |
-
-
-### Return type
-
-**GenericSuccess**
-
-### Authorization
-
-[cookieAuth](../README.md#cookieAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Request created |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

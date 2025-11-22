@@ -201,7 +201,7 @@ async def auth_check(username: str = Depends(get_current_username)):
 	return {"username": username}
 
 
-@app.post("/friend-request", response_model=GenericResponse)
+@app.post("/friend-request/create", response_model=GenericResponse)
 async def send_friend_request(body: FriendRequestBody, username: str = Depends(get_current_username)):
 	target = body.friendUsername
 	if target == username:

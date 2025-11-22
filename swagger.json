@@ -154,7 +154,7 @@
         }
       }
     },
-    "/friend-request": {
+    "/friend-request/create": {
       "post": {
         "summary": "Send a friend request",
         "security": [
@@ -167,7 +167,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FriendRequest"
+                "$ref": "#/components/schemas/FriendRequestCreate"
               }
             }
           }
@@ -443,6 +443,13 @@
       "FriendList": {
           "type": "array",
           "items": { "type": "string", "example": "bob456" }
+      },
+      "FriendRequestCreate": {
+        "type": "object",
+        "required": ["friendUsername"],
+        "properties": {
+            "friendUsername": { "type": "string", "example": "bob456" }
+        }
       },
       "FriendRequest": {
           "type": "object",

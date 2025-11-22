@@ -14,6 +14,7 @@ import { StandardCard } from "./StandardCard";
 import { ListUserItem } from "./ListUserItem";
 import { DApi, ErrorWidget, useApi, useApiState } from "../utils";
 import { FriendRequest } from "../api";
+import { CreateFriendRequestWidget } from "./CreateFriendRequestWidget";
 
 export const FriendsRequestWidget = () => {
   const [errorFR, friendReqs, { refetch }] = useApiState(
@@ -31,7 +32,7 @@ export const FriendsRequestWidget = () => {
     );
   };
 
-  const [errorAR, acceptRequest] = useApi(DApi.friendRequestIdRejectPost, {
+  const [errorAR, acceptRequest] = useApi(DApi.friendRequestIdAcceptPost, {
     onSuccess: refetch,
   });
 
@@ -44,79 +45,82 @@ export const FriendsRequestWidget = () => {
   });
 
   return (
-    <StandardCard>
-      <CardHeader
-        title={
-          <Typography gutterBottom variant="h5" align="center">
-            Friend requests
-          </Typography>
-        }
-      />
+    <>
+      <StandardCard>
+        <CardHeader
+          title={
+            <Typography gutterBottom variant="h5" align="center">
+              Friend requests
+            </Typography>
+          }
+        />
 
-      <ErrorWidget errors={[errorFR, errorAR, errorRR, errorCR]} />
-      <Divider />
-      <CardContent>
-        <Typography gutterBottom variant="h6" align="center">
-          To you
-        </Typography>
-        {noneCurr(
-          friendReqsTo,
-          <List>
-            {friendReqsTo?.map(({ id, friendName }) => (
-              <ListUserItem
-                userName={friendName}
-                key={friendName}
-                secondaryAction={
-                  <Box sx={{ display: "flex", gap: 1 }}>
-                    <IconButton
-                      edge="end"
-                      aria-label="accept-request"
-                      onClick={() => acceptRequest({ id })}
-                    >
-                      <DoneIcon />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      aria-label="reject-request"
-                      onClick={() => rejectRequest({ id })}
-                    >
-                      <ClearIcon />
-                    </IconButton>
-                  </Box>
-                }
-              />
-            ))}
-          </List>,
-        )}
-      </CardContent>
-      <Divider />
-      <CardContent>
-        <Typography gutterBottom variant="h6" align="center">
-          From you
-        </Typography>
-        {noneCurr(
-          friendReqsFrom,
-          <List>
-            {friendReqsFrom?.map(({ id, friendName }) => (
-              <ListUserItem
-                userName={friendName}
-                key={friendName}
-                secondaryAction={
-                  <Box sx={{ display: "flex", gap: 1 }}>
-                    <IconButton
-                      edge="end"
-                      aria-label="cancel-request"
-                      onClick={() => cancelRequest({ id })}
-                    >
-                      <ClearIcon />
-                    </IconButton>
-                  </Box>
-                }
-              />
-            )) ?? "Loading..."}
-          </List>,
-        )}
-      </CardContent>
-    </StandardCard>
+        <ErrorWidget errors={[errorFR, errorAR, errorRR, errorCR]} />
+        <Divider />
+        <CardContent>
+          <Typography gutterBottom variant="h6" align="center">
+            To you
+          </Typography>
+          {noneCurr(
+            friendReqsTo,
+            <List>
+              {friendReqsTo?.map(({ id, friendName }) => (
+                <ListUserItem
+                  userName={friendName}
+                  key={friendName}
+                  secondaryAction={
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <IconButton
+                        edge="end"
+                        aria-label="accept-request"
+                        onClick={() => acceptRequest({ id })}
+                      >
+                        <DoneIcon />
+                      </IconButton>
+                      <IconButton
+                        edge="end"
+                        aria-label="reject-request"
+                        onClick={() => rejectRequest({ id })}
+                      >
+                        <ClearIcon />
+                      </IconButton>
+                    </Box>
+                  }
+                />
+              ))}
+            </List>,
+          )}
+        </CardContent>
+        <Divider />
+        <CardContent>
+          <Typography gutterBottom variant="h6" align="center">
+            From you
+          </Typography>
+          {noneCurr(
+            friendReqsFrom,
+            <List>
+              {friendReqsFrom?.map(({ id, friendName }) => (
+                <ListUserItem
+                  userName={friendName}
+                  key={friendName}
+                  secondaryAction={
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <IconButton
+                        edge="end"
+                        aria-label="cancel-request"
+                        onClick={() => cancelRequest({ id })}
+                      >
+                        <ClearIcon />
+                      </IconButton>
+                    </Box>
+                  }
+                />
+              )) ?? "Loading..."}
+            </List>,
+          )}
+        </CardContent>
+      </StandardCard>
+      <CreateFriendRequestWidget refetch={refetch} />
+    </>
   );
 };
