@@ -10,8 +10,9 @@ All URIs are relative to *https://api.example.com*
 |[**friendRequestIdCancelPost**](#friendrequestidcancelpost) | **POST** /friend-request/{id}/cancel | Cancel a pending friend request|
 |[**friendRequestIdRejectPost**](#friendrequestidrejectpost) | **POST** /friend-request/{id}/reject | Reject a pending friend request|
 |[**friendRequestsGet**](#friendrequestsget) | **GET** /friend-requests | Get frend requests for the authenticated user|
+|[**friendsFriendUsernameDelete**](#friendsfriendusernamedelete) | **DELETE** /friends/{friend_username} | Delete a friend connection|
 |[**friendsGet**](#friendsget) | **GET** /friends | List usernames of confirmed friends|
-|[**locationPost**](#locationpost) | **POST** /location | Push current location|
+|[**locationPost**](#locationpost) | **POST** /location | Report current position and retrieve recent friend locations|
 |[**loginPost**](#loginpost) | **POST** /login | Authenticate a user and receive a session cookie|
 |[**logoutPost**](#logoutpost) | **POST** /logout | Logout the authenticated user|
 |[**signupPost**](#signuppost) | **POST** /signup | Create a new user account|
@@ -307,6 +308,57 @@ This endpoint does not have any parameters.
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **friendsFriendUsernameDelete**
+> GenericSuccess friendsFriendUsernameDelete()
+
+
+### Example
+
+```typescript
+import {
+    DefaultApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new DefaultApi(configuration);
+
+let friendUsername: string; //Username of the friend to remove (default to undefined)
+
+const { status, data } = await apiInstance.friendsFriendUsernameDelete(
+    friendUsername
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **friendUsername** | [**string**] | Username of the friend to remove | defaults to undefined|
+
+
+### Return type
+
+**GenericSuccess**
+
+### Authorization
+
+[cookieAuth](../README.md#cookieAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Friend removed |  -  |
+|**404** | Friend not found |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **friendsGet**
 > Array<string> friendsGet()
 
@@ -351,7 +403,7 @@ This endpoint does not have any parameters.
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **locationPost**
-> GenericSuccess locationPost(locationPush)
+> Array<LocationEntry> locationPost(locationPush)
 
 
 ### Example
@@ -382,7 +434,7 @@ const { status, data } = await apiInstance.locationPost(
 
 ### Return type
 
-**GenericSuccess**
+**Array<LocationEntry>**
 
 ### Authorization
 
@@ -397,7 +449,7 @@ const { status, data } = await apiInstance.locationPost(
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-|**200** | Location stored |  -  |
+|**200** | Array of recent location entries for the supplied friends |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

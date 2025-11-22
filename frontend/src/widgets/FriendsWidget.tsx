@@ -13,7 +13,7 @@ import { DApi, ErrorWidget, useApi, useApiState } from "../utils";
 export const FriendsWidget = () => {
   const [errorFr, friends, { refetch }] = useApiState(DApi.friendsGet);
 
-  const [errorDFr, deleteFriend] = useApi(DApi.friendsDelete, {
+  const [errorDFr, deleteFriend] = useApi(DApi.friendsFriendUsernameDelete, {
     onSuccess: refetch,
   });
 
@@ -27,11 +27,7 @@ export const FriendsWidget = () => {
         }
       />
 
-      <ErrorWidget
-        errors={[
-          errorFr, // errorDFr
-        ]}
-      />
+      <ErrorWidget errors={[errorFr, errorDFr]} />
       <Divider />
       {friends === null ? (
         <Typography sx={{ margin: 1 }} align="center">
@@ -51,9 +47,9 @@ export const FriendsWidget = () => {
                 <IconButton
                   edge="end"
                   aria-label="delete"
-                  onClick={() => deleteFriend({ friendUsername : friendName })}
+                  onClick={() => deleteFriend({ friendUsername: friendName })}
                 >
-                <PersonRemoveIcon />
+                  <PersonRemoveIcon />
                 </IconButton>
               }
             />

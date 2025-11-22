@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [optional] [default to undefined]
-**message** | **string** |  | [optional] [default to undefined]
+**detail** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
@@ -15,7 +15,7 @@ import { SignupResponse } from './api';
 
 const instance: SignupResponse = {
     success,
-    message,
+    detail,
 };
 ```
 
