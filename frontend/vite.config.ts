@@ -36,5 +36,10 @@ export default ({ mode }) => {
       }),
       eslint({ baseConfig: eslintBaseConfig }),
     ],
+    // Ensure Vite resolves a single copy of React to avoid duplicate-React issues
+    // that break Context between libraries (common cause of "render2 is not a function").
+    resolve: {
+      dedupe: ["react", "react-dom"],
+    },
   };
 };

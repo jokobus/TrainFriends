@@ -3,4 +3,5 @@ node_modules
 *.db
 __pycache__
 frontend/dist/
+frontend/node_modules
 firebase.json
