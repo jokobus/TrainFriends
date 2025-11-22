@@ -54,6 +54,16 @@ def main():
     r = a.post(f"{BASE}/location", json={"latitude": 48.1371, "longitude": 11.5754})
     print("location (report+query) response:", r.status_code, r.text)
 
+    # register device tokens for FCM (hackathon simple - one token per user)
+    r = a.post(f"{BASE}/register-token", json={"token": "tok-alice"})
+    print("alice register-token:", r.status_code, r.text)
+    r = b.post(f"{BASE}/register-token", json={"token": "tok-bob"})
+    print("bob register-token:", r.status_code, r.text)
+
+    # alice notifies her friends (bob) that she's nearby
+    r = a.post(f"{BASE}/notify-friends", json={"friends": ["bob"]})
+    print("notify-friends response:", r.status_code, r.text)
+
     # wait a bit to receive SSE
     time.sleep(3)
 

@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import sqlite3
 import firebase_admin
 from firebase_admin import credentials
+from firebase_admin import messaging
 from pathlib import Path
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
@@ -62,6 +63,14 @@ class FriendRequestBody(BaseModel):
 class LocationPush(BaseModel):
 	latitude: float
 	longitude: float
+
+
+class RegisterToken(BaseModel):
+	token: str
+
+
+class CloseFriendsBody(BaseModel):
+	friends: list[str]
 
 
 # LocationWithFriends removed: /location will determine friends from DB
@@ -133,6 +142,16 @@ def init_db():
 			user TEXT NOT NULL,
 			friend TEXT NOT NULL,
 			PRIMARY KEY (user, friend)
+		)
+		"""
+	)
+	# store device registration tokens for FCM
+	cur.execute(
+		"""
+		CREATE TABLE IF NOT EXISTS device_tokens (
+			username TEXT NOT NULL,
+			token TEXT NOT NULL,
+			PRIMARY KEY (username, token)
 		)
 		"""
 	)
@@ -398,6 +417,58 @@ async def location(loc: LocationPush, username: str = Depends(get_current_userna
 	conn.close()
 
 	return rows
+
+
+@app.post("/register-token", response_model=GenericResponse)
+async def register_token(body: RegisterToken, username: str = Depends(get_current_username)):
+	"""Register a device token for the current user (FCM token).
+
+	Simple: store token in device_tokens table (INSERT OR IGNORE).
+	"""
+	conn = get_conn()
+	conn.execute(
+		"INSERT OR IGNORE INTO device_tokens(username, token) VALUES (?, ?)",
+		(username, body.token),
+	)
+	conn.commit()
+	conn.close()
+	return GenericResponse(success=True, detail="Token registered")
+
+
+@app.post("/notify-friends", response_model=GenericResponse)
+async def notify_friends(body: CloseFriendsBody, username: str = Depends(get_current_username)):
+	"""Send a simple FCM push notification to listed friends telling them `username` is nearby.
+
+	Body: { friends: ["friend1", "friend2"] }
+
+	This is intentionally simple hackathon code: we lookup any registered device tokens
+	for the given friend usernames and use messaging.send_multicast to notify them.
+	"""
+	if not body.friends:
+		return GenericResponse(success=True, detail="No friends provided")
+
+	conn = get_conn()
+	placeholders = ",".join("?" for _ in body.friends)
+	cur = conn.execute(
+		f"SELECT username, token FROM device_tokens WHERE username IN ({placeholders})",
+		tuple(body.friends),
+	)
+	rows = cur.fetchall()
+	conn.close()
+
+	tokens = [r["token"] for r in rows]
+	if not tokens:
+		return GenericResponse(success=True, detail="No device tokens found for friends")
+
+	# Build a small notification message
+	notif = messaging.Notification(title="TrainFriends", body=f"{username} is nearby!")
+	message = messaging.MulticastMessage(notification=notif, tokens=tokens)
+	try:
+		result = messaging.send_multicast(message)
+		detail = f"sent={result.success_count}, failed={result.failure_count}"
+		return GenericResponse(success=True, detail=detail)
+	except Exception as e:
+		return GenericResponse(success=False, detail=str(e))
 
 
 @app.get("/events")

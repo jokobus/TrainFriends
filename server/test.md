@@ -114,6 +114,34 @@ Expected response (array of recent location entries for the supplied friends):
 [ { "username": "bob", "latitude": 48.1371, "longitude": 11.5754, "ts": "2025-11-22T...Z" } ]
 ```
 
+7) Register device token (so the server can send push notifications)
+
+Register an FCM device token for the authenticated user. Replace <alice_session> with the session value you copied from /login.
+
+Alice:
+```powershell
+curl.exe -s -X POST http://localhost:8000/register-token -H "Content-Type: application/json" -H "Cookie: session_id=<alice_session>" -d '{"token":"tok-alice"}'
+```
+
+Bob:
+```powershell
+curl.exe -s -X POST http://localhost:8000/register-token -H "Content-Type: application/json" -H "Cookie: session_id=<bob_session>" -d '{"token":"tok-bob"}'
+```
+
+8) Notify friends via FCM (server will look up registered tokens for the friend usernames)
+
+Alice notifies Bob that she is nearby:
+
+```powershell
+curl.exe -s -X POST http://localhost:8000/notify-friends -H "Content-Type: application/json" -H "Cookie: session_id=<alice_session>" -d '{"friends":["bob"]}'
+```
+
+Expected response:
+
+```json
+{ "success": true, "detail": "sent=1, failed=0" }
+```
+
 If you see only the initial "connected" detail and no location event, verify that the friend relationship was established in step 4.
 
 ## Further functionalities (authCheck, logout, friend-requests, reject, cancel)

@@ -313,6 +313,40 @@
             }
           }
         },
+          "/register-token": {
+            "post": {
+              "summary": "Register an FCM device token for the current user",
+              "security": [ { "cookieAuth": [] } ],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": { "$ref": "#/components/schemas/RegisterToken" }
+                  }
+                }
+              },
+              "responses": {
+                "200": { "description": "Token registered", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GenericSuccess" } } } }
+              }
+            }
+          },
+          "/notify-friends": {
+            "post": {
+              "summary": "Send a push notification to a list of friends telling them you are nearby",
+              "security": [ { "cookieAuth": [] } ],
+              "requestBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": { "$ref": "#/components/schemas/CloseFriendsBody" }
+                  }
+                }
+              },
+              "responses": {
+                "200": { "description": "Notification send result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GenericSuccess" } } } }
+              }
+            }
+          },
         "responses": {
           "200": {
             "description": "Array of recent location entries for the supplied friends",
@@ -487,6 +521,21 @@
           "latitude": { "type": "number", "format": "float" },
           "longitude": { "type": "number", "format": "float" },
           "ts": { "type": "string", "format": "date-time" }
+        }
+      }
+      ,
+      "RegisterToken": {
+        "type": "object",
+        "required": ["token"],
+        "properties": {
+          "token": { "type": "string", "example": "fcm_device_token_here" }
+        }
+      },
+      "CloseFriendsBody": {
+        "type": "object",
+        "required": ["friends"],
+        "properties": {
+          "friends": { "type": "array", "items": { "type": "string" }, "example": ["bob"] }
         }
       }
     }
