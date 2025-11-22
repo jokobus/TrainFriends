@@ -28,7 +28,6 @@ export const CreateFriendRequestWidget = ({
   return (
     <form onSubmit={handleSubmit}>
       <Stack spacing={2} alignItems="center">
-        <h2>Create Send Request</h2>
         <TextField
           required
           type="text"

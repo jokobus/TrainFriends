@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import { Api } from "../api";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { handleApiErr, useTitle } from "../utils";
 import { userNameMaxLength } from "../consts";
 import { LinkWidget } from "../widgets/LinkWidget";
@@ -25,6 +25,7 @@ export const Signup = (): JSX.Element => {
   const [succeeded, setSucceeded] = useState<boolean>(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const handleChangeSD = (e: React.ChangeEvent<HTMLInputElement>) => {
     // limit size of username to 20 characters
@@ -62,9 +63,13 @@ export const Signup = (): JSX.Element => {
           password: signupData.password,
         },
       });
-      // TODO: use response
+      // on success, redirect to login and show a small info message there
       setError("");
       setSucceeded(true);
+      navigate("/login", {
+        state: { info: "Signup successful, please log in" },
+        replace: true,
+      });
     } catch (e: any) {
       setError(handleApiErr(e));
     } finally {

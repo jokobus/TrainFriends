@@ -26,7 +26,7 @@ export const FriendsRequestWidget = () => {
 
   const noneCurr = (reqs: FriendRequest[] | undefined, el: ReactNode) => {
     return reqs?.length === 0 ? (
-      <Typography align="center">None currently</Typography>
+      <Typography align="center">No open request</Typography>
     ) : (
       el
     );
@@ -120,7 +120,20 @@ export const FriendsRequestWidget = () => {
           )}
         </CardContent>
       </StandardCard>
-      <CreateFriendRequestWidget refetch={refetch} />
+          <div style={{ height: 16 }} />
+      <StandardCard>
+        <CardHeader
+          title={
+            <Typography gutterBottom variant="h6" align="center">
+              Create friend request
+            </Typography>
+          }
+        />
+        <Divider />
+        <CardContent>
+          <CreateFriendRequestWidget refetch={refetch} />
+        </CardContent>
+      </StandardCard>
     </>
   );
 };

@@ -16,6 +16,12 @@ export const Login = () => {
   const { login, authState } = useAuth();
   const { state } = useLocation();
 
+  useEffect(() => {
+    if (state && (state as any).info) {
+      setSuccess((state as any).info as string);
+    }
+  }, [state]);
+
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     const [noerrorp, errorMsg] = await login({ username, password });

@@ -23,5 +23,12 @@ export const Api = (() => {
 
   return {
     ...auto.DefaultApiFactory(configuration, basePath),
+    // custom helper: delete a friend by username (DELETE /friends/{friend_username})
+    friendsDelete(requestParameters: { friendUsername: string }) {
+      const url = `${basePath}/friends/${encodeURIComponent(
+        requestParameters.friendUsername,
+      )}`;
+      return axios.delete(url, { withCredentials: true });
+    },
   };
 })();

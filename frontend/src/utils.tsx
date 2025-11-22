@@ -123,20 +123,26 @@ export const handleApiErr = (error: any): string => {
     console.log(error.response.data.detail);
     console.log(error.response.status);
     console.log(error.response.headers);
-    errMsg = "Error:" + error.response.data.detail;
+    // Server may already include an "Error:" prefix. Normalize to a single prefix.
+    let detail = String(error.response.data?.detail ?? "");
+    // detail = detail.replace(/^\s*Error:\s*/i, "");
+    // errMsg = "Error: " + detail;
+    errMsg = detail;
   } else if (error.request) {
     // The request was made but no response was received
     // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
     // http.ClientRequest in node.js
     console.log(error.request);
-    errMsg = "Error: No response received: " + error.request;
+    errMsg = "Error: No response received" + (error.request ? ": " + String(error.request) : "");
   } else if (error.message) {
     // Something happened in setting up the request that triggered an Error
     console.log(error.message);
-    errMsg = "Error: " + error.message;
+    let msg = String(error.message ?? "");
+    msg = msg.replace(/^\s*Error:\s*/i, "");
+    errMsg = "Error: " + msg;
   } else {
     console.log("Error: Unkown Error");
-    return "Error: Unkown Error";
+    return "Error: Unknown Error";
   }
 
   console.log(error.config);

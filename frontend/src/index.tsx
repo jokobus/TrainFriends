@@ -11,6 +11,7 @@ import HomeRoute from "./routes/HomeRoute";
 import { FriendsRequestWidget } from "./widgets/FriendsRequestWidget";
 import { FriendsWidget } from "./widgets/FriendsWidget";
 import { AuthProvider } from "./providers/auth";
+import { AppThemeProvider } from "./providers/theme";
 
 // // Rickroll banner
 const banner = `
@@ -77,9 +78,10 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <CssBaseline enableColorScheme />
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <AppThemeProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </AppThemeProvider>
   </React.StrictMode>,
 );
