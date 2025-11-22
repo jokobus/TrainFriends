@@ -32,6 +32,7 @@ class SignupRequest(BaseModel):
 class GenericResponse(BaseModel):
 	success: bool
 	message: Optional[str] = None
+	id: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -100,7 +101,8 @@ async def send_friend_request(body: FriendRequestBody, username: str = Depends(g
 	# create request
 	rid = uuid.uuid4().hex
 	friend_requests[rid] = {"from": username, "to": target, "status": "pending", "created": datetime.utcnow().isoformat()}
-	return GenericResponse(success=True, message="Request created")
+	# return the created request id to help clients/tests accept/reject the request
+	return GenericResponse(success=True, message="Request created", id=rid)
 
 
 @app.post("/friend-request/{request_id}/accept", response_model=GenericResponse)
