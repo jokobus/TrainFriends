@@ -1,4 +1,5 @@
 import React from "react";
+import "leaflet/dist/leaflet.css";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import CssBaseline from "@mui/material/CssBaseline/CssBaseline";
