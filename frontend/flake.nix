@@ -74,6 +74,7 @@
             #   # androidSdk
             #   jdk23
             # ];
+            buildInputs = with pkgs; [ openapi-generator-cli ];
           };
 
         }

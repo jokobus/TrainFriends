@@ -1,0 +1,93 @@
+import {
+  Box,
+  Button,
+  IconButton,
+  Popover,
+  Tooltip,
+  useTheme,
+} from "@mui/material";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import { useAuthState } from "../providers/auth";
+import { useLocation, useNavigate } from "react-router";
+import { LinkWidget } from "./LinkWidget";
+
+import HelpIcon from "@mui/icons-material/Help";
+import QrCodeIcon from "@mui/icons-material/QrCode";
+
+import logo from "../assets/logo.png";
+import PopupState, { bindPopover, bindTrigger } from "material-ui-popup-state";
+import { QRCodeSVG } from "qrcode.react";
+
+// see https://mui.com/material-ui/react-app-bar/
+// see https://mui.com/material-ui/react-app-bar/#fixed-placement about placement
+
+export const AppBarWidget = () => {
+  const { isAuthenticated } = useAuthState();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const theme = useTheme();
+
+  const navToLogin = () => {
+    navigate("/login", {
+      state: { from: location.pathname },
+      replace: true,
+    });
+  };
+
+  const loginButton = (
+    <Button
+      color="inherit"
+      onClick={() => {
+        navToLogin();
+      }}
+    >
+      Login
+    </Button>
+  );
+  const loggedinBarActions = () => {
+    if (!isAuthenticated) {
+      throw new Error("User is not authenticated");
+    }
+    return <></>;
+  };
+
+  return (
+    <AppBar color="primary" style={{ zIndex: 1000, position: "sticky" }}>
+      <Toolbar>
+        <LinkWidget to={"/"}>
+          <img src={logo} alt="Logo" style={{ height: 40, marginRight: 16 }} />
+        </LinkWidget>
+        {
+          undefined
+          // Takes too much space
+          /* <LinkWidget to={"/"}>
+          <Typography variant="h6">Give'n'take</Typography>
+        </LinkWidget> */
+        }
+        <Box sx={{ flexGrow: 1 }} />
+
+        <PopupState variant="popover" popupId="qrcode-popover">
+          {(popupState) => (
+            <>
+              <IconButton {...bindTrigger(popupState)} aria-label="qrcode">
+                <QrCodeIcon />
+              </IconButton>
+              <Popover
+                {...bindPopover(popupState)}
+                onClick={() => popupState.close()}
+              >
+                <QRCodeSVG
+                  value={window.location.href}
+                  fgColor={theme.palette.primary.main}
+                  style={{ display: "block" }}
+                />
+              </Popover>
+            </>
+          )}
+        </PopupState>
+        {isAuthenticated ? loggedinBarActions() : loginButton}
+      </Toolbar>
+    </AppBar>
+  );
+};

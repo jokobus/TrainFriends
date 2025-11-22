@@ -1,7 +1,16 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import CssBaseline from "@mui/material/CssBaseline/CssBaseline";
+import Frame from "./routes/Frame";
+import ErrorPage from "./error-page";
+import { ProtectedRoute } from "./ProtectedRoute";
+import { Signup } from "./routes/Signup";
+import { Login } from "./routes/Login";
+import HomeRoute from "./routes/HomeRoute";
+import { FriendsRequestWidget } from "./widgets/FriendsRequestWidget";
+import { FriendsWidget } from "./widgets/FriendsWidget";
+import { AuthProvider } from "./providers/auth";
 
 // // Rickroll banner
 const banner = `
@@ -34,44 +43,32 @@ console.log(
   "color: #007bff; font-family: monospace; font-size: 1em",
 );
 
-// Setup anti XSRF-TOKEN. See also
-// https://github.com/haskell-servant/servant/tree/master/servant-auth
-/* {
- *   // Get the XSRF token from cookies
- *   const token = (() => {
- *     const match = document.cookie.match(new RegExp("XSRF-TOKEN=([^;]+)"));
- *     return match ? match[1] : null;
- *   })();
- *
- *   // Add a request interceptor
- *   axios.interceptors.request.use(
- *     (config) => {
- *       if (token) {
- *         // Set the XSRF token header
- *         config.headers["X-XSRF-TOKEN"] = token;
- *       }
- *       return config;
- *     },
- *     (error) => {
- *       return Promise.reject(error);
- *     },
- *   );
- * } */
-// https://reactrouter.com/en/main/start/tutorial
 const router = createBrowserRouter([
   {
     path: "/",
-    // element: (
-    //   <Frame>
-    //     <Outlet />
-    //   </Frame>
-    // ),
-    // errorElement: (
-    //   <Frame>
-    //     <ErrorPage />
-    //   </Frame>
-    // ),
-    children: [],
+    element: (
+      <Frame>
+        <Outlet />
+      </Frame>
+    ),
+    errorElement: (
+      <Frame>
+        <ErrorPage />
+      </Frame>
+    ),
+    children: [
+      ProtectedRoute({
+        path: "/",
+        element: <Outlet />,
+        children: [
+          { index: true, element: <HomeRoute /> },
+          { path: "friends", element: <FriendsWidget /> },
+          { path: "friendReqs", element: <FriendsRequestWidget /> },
+        ],
+      }),
+      { path: "login", element: <Login /> },
+      { path: "signup", element: <Signup /> },
+    ],
   },
 ]);
 
@@ -81,6 +78,8 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <CssBaseline enableColorScheme />
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </React.StrictMode>,
 );

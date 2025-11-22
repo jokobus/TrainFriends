@@ -77,6 +77,83 @@
         }
       }
     },
+    "/authCheck": {
+        "get": {
+            "summary": "Check if the user is authenticated and receive user info in that case",
+            "security": [
+                {
+                    "cookieAuth": []
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "User is authenticated",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                               "$ref": "#/components/schemas/AuthCheckResponse"
+                            }
+                        }
+                    }
+                },
+                "401": {
+                    "description": "User is not authenticated"
+                }
+            }
+        }
+    },
+    "/logout": {
+        "post": {
+            "summary": "Logout the authenticated user",
+            "security": [
+                {
+                    "cookieAuth": []
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "Logout successful – session cookie cleared",
+                    "headers": {
+                        "Set-Cookie": {
+                            "description": "Cleared session cookie",
+                            "schema": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/GenericSuccess"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "/friend-requests": {
+      "get": {
+        "summary": "Get frend requests for the authenticated user",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of friend requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendRequests"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/friend-request": {
       "post": {
         "summary": "Send a friend request",
@@ -167,6 +244,43 @@
         "responses": {
           "200": {
             "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericSuccess"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request not found"
+          }
+        }
+      }
+    },
+
+    "/friend-request/{id}/cancel": {
+      "post": {
+        "summary": "Cancel a pending friend request",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Friend request identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request canceled",
             "content": {
               "application/json": {
                 "schema": {
@@ -275,12 +389,12 @@
           "message": { "type": "string", "example": "Logged in." }
         }
       },
-      "FriendRequest": {
-        "type": "object",
-        "required": ["friendUsername"],
-        "properties": {
-          "friendUsername": { "type": "string", "example": "bob456" }
-        }
+      "AuthCheckResponse": {
+          "type": "object",
+          "required": ["username"],
+          "properties": {
+              "username": { "type": "string", "example": "alice123" }
+          }
       },
       "LocationPush": {
         "type": "object",
@@ -291,13 +405,28 @@
         }
       },
       "FriendList": {
-        "type": "object",
-        "properties": {
-          "friends": {
-            "type": "array",
-            "items": { "type": "string", "example": "bob456" }
+          "type": "array",
+          "items": { "type": "string", "example": "bob456" }
+      },
+      "FriendRequest": {
+          "type": "object",
+          "required": ["id", "friendName"],
+          "properties": {
+              "id": { "type": "string" },
+              "friendName": { "type": "string", "example": "bob456" }
           }
-        }
+      },
+      "FriendRequestsList": {
+          "type": "array",
+          "items": { "$ref": "#/components/schemas/FriendRequest" }
+      },
+      "FriendRequests": {
+          "type": "object", 
+          "required": ["requestsToYou", "requestsFromYou"],
+          "properties": {
+              "requestsToYou": { "$ref": "#/components/schemas/FriendRequestsList" },
+              "requestsFromYou": { "$ref": "#/components/schemas/FriendRequestsList" }
+          }
       },
       "GenericSuccess": {
         "type": "object",

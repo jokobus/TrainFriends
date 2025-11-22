@@ -1,0 +1,41 @@
+import HomeIcon from "@mui/icons-material/Home";
+import { Link } from "react-router-dom";
+import { BottomNavigation, BottomNavigationAction } from "@mui/material";
+import GroupsIcon from "@mui/icons-material/Groups";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import CreateIcon from "@mui/icons-material/Create";
+import { useLocation } from "react-router";
+import { useAuthedState } from "../ProtectedRoute";
+
+// https://mui.com/material-ui/react-list/
+export default function MainMenu() {
+  const location = useLocation();
+  const { userName } = useAuthedState();
+
+  // TODO: fix  navigation
+  return (
+    <BottomNavigation value={location.pathname}>
+      <BottomNavigationAction
+        icon={<HomeIcon />}
+        label="Home"
+        component={Link}
+        to="/"
+        value="/"
+      />
+      <BottomNavigationAction
+        icon={<GroupsIcon />}
+        label="Community"
+        component={Link}
+        to="/community"
+        value="/community"
+      />
+      <BottomNavigationAction
+        icon={<CreateIcon />}
+        label="Create"
+        component={Link}
+        to="/newpost"
+        value="/newpost"
+      />
+    </BottomNavigation>
+  );
+}
