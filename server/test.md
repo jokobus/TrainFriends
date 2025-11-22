@@ -5,7 +5,6 @@ This file shows a quick, local smoke-test flow for the backend API. It uses curl
 First install dependencies via conda or pip. 
 
 Start the backend server
-- From the repository root run:
   ```powershell
   python server/main.py
   ```
@@ -19,8 +18,6 @@ Optional: choose a persistent DB location
    The server will create and use that DB file (`trainfriends.db`) and retain data across restarts.
 
 Notes
-- On first run the server will create `server/data.db` (SQLite file) to persist users, sessions and friend data.
-- Passwords are stored in plaintext for demo/hackathon simplicity. 
 
 Smoke tests (PowerShell-friendly, use curl.exe)
 Explicitly call `curl.exe` to avoid PowerShell's built-in alias.
@@ -87,7 +84,6 @@ curl.exe -s http://localhost:8000/friends -H "Cookie: session_id=<bob_session>"
 ```
 
 6) Test SSE (Server-Sent Events) + push location
-- Terminal B: open an SSE stream as bob (it will show a welcome message)
 
 Bob (use Bob's session value):
 ```powershell
@@ -95,7 +91,6 @@ curl.exe -N http://localhost:8000/events -H "Cookie: session_id=<bob_session>"
 ```
 Keep this terminal open and watching for events.
 
-- Terminal A: push a location as alice (this should be pushed to bob via SSE)
 
 Alice (use Alice's session value):
 ```powershell
@@ -109,8 +104,67 @@ data: {"from":"alice","latitude":48.1371,"longitude":11.5754,"ts":"..."}
 
 If you see only the initial "connected" message and no location event, verify that the friend relationship was established in step 4.
 
-Quick troubleshooting
-- If you get "ModuleNotFoundError: No module named 'fastapi'" install dependencies as shown above.
-- If the server fails to start due to DB locking on heavy write load, stop the server and retry (SQLite is fine for demo/light use).
+## Further functionalities (authCheck, logout, friend-requests, reject, cancel)
 
-That's it — this should be enough to manually exercise signup/login/friend-request/accept and SSE location pushes for the hackathon demo.
+Replace placeholders like <alice_session>, <bob_session>, and <rid> with real values obtained from the login / friend-request responses.
+
+### Auth check 
+- verify session cookie is valid
+
+```powershell
+curl.exe -s http://localhost:8000/authCheck -H "Cookie: session_id=<alice_session>"
+```
+
+Expected response when authenticated:
+
+```json
+{"username":"alice"}
+```
+
+### Logout 
+- clears the session on the server and clears cookie in the response
+
+```powershell
+curl.exe -i -s -X POST http://localhost:8000/logout -H "Cookie: session_id=<alice_session>"
+```
+
+Look for a `Set-Cookie` header that clears `session_id` (empty value / Max-Age=0 / Expires set).
+
+### List pending friend requests 
+- both incoming and outgoing
+
+```powershell
+curl.exe -s http://localhost:8000/friend-requests -H "Cookie: session_id=<bob_session>"
+```
+
+Sample response shape:
+
+```json
+{
+  "requestsToYou": [ { "id": "<rid>", "friendName": "alice", "status": "pending", "created": "..." } ],
+  "requestsFromYou": []
+}
+```
+
+### Reject a pending friend request (recipient action)
+
+```powershell
+curl.exe -s -X POST http://localhost:8000/friend-request/<rid>/reject -H "Cookie: session_id=<bob_session>"
+```
+
+This will set the request's status to `rejected` (row remains in DB). The endpoint returns a JSON success message.
+
+### Cancel a pending friend request (sender action)
+
+```powershell
+curl.exe -s -X POST http://localhost:8000/friend-request/<rid>/cancel -H "Cookie: session_id=<alice_session>"
+```
+
+This deletes the pending friend request row. The endpoint returns a JSON success message.
+
+### Notes and quick troubleshooting
+- If you get "ModuleNotFoundError: No module named 'fastapi'" install dependencies (conda, pip, etc.). 
+- If the server fails to start due to DB locking on heavy write load, stop the server and retry (SQLite is fine for demo/light use).
+- After `reject` the request shows status `rejected` in the friend-requests listing; after `cancel` the request no longer appears in either list.
+- Trying to accept/reject/cancel a request that is not in `pending` state will return a JSON response indicating the current status (e.g. `Request already accepted`).
+- All of these endpoints require authentication (a valid `session_id` cookie). If the cookie is missing or invalid you'll get a 401 response with a JSON body like `{ "detail": "Unauthorized" }`.

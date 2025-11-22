@@ -169,6 +169,26 @@ async def login(req: LoginRequest, response: Response):
 	return {"success": True, "message": "Logged in."}
 
 
+@app.post("/logout")
+async def logout(request: Request, response: Response, username: str = Depends(get_current_username)):
+	"""Logout current user: remove session from DB and clear cookie."""
+	sid = request.cookies.get("session_id")
+	if sid:
+		conn = get_conn()
+		conn.execute("DELETE FROM sessions WHERE session_id = ?", (sid,))
+		conn.commit()
+		conn.close()
+	# clear cookie on client
+	response.delete_cookie("session_id", path="/")
+	return {"success": True, "message": "Logged out."}
+
+
+@app.get("/authCheck")
+async def auth_check(username: str = Depends(get_current_username)):
+	"""Return authenticated username if the session cookie is valid."""
+	return {"username": username}
+
+
 @app.post("/friend-request", response_model=GenericResponse)
 async def send_friend_request(body: FriendRequestBody, username: str = Depends(get_current_username)):
 	target = body.friendUsername
@@ -222,6 +242,10 @@ async def accept_friend_request(request_id: str, username: str = Depends(get_cur
 
 @app.post("/friend-request/{request_id}/reject", response_model=GenericResponse)
 async def reject_friend_request(request_id: str, username: str = Depends(get_current_username)):
+	"""Recipient rejects a pending friend request — delete it
+
+	Simple semantics: only the to_user can reject, and only if status is 'pending'.
+	"""
 	conn = get_conn()
 	cur = conn.cursor()
 	cur.execute("SELECT * FROM friend_requests WHERE id = ?", (request_id,))
@@ -235,19 +259,67 @@ async def reject_friend_request(request_id: str, username: str = Depends(get_cur
 	if fr["status"] != "pending":
 		conn.close()
 		return GenericResponse(success=False, message=f"Request already {fr['status']}")
-	cur.execute("UPDATE friend_requests SET status = 'rejected' WHERE id = ?", (request_id,))
+	cur.execute("DELETE FROM friend_requests WHERE id = ?", (request_id,))
 	conn.commit()
 	conn.close()
 	return GenericResponse(success=True, message="Request rejected")
 
 
+@app.post("/friend-request/{request_id}/cancel", response_model=GenericResponse)
+async def cancel_friend_request(request_id: str, username: str = Depends(get_current_username)):
+	"""Allow the sender to cancel their pending friend request - delete it. 
+	
+	Simple semantics: only the from_user can cancel, and only if status is 'pending'.
+	"""
+	conn = get_conn()
+	cur = conn.cursor()
+	cur.execute("SELECT * FROM friend_requests WHERE id = ?", (request_id,))
+	fr = cur.fetchone()
+	if not fr:
+		conn.close()
+		raise HTTPException(status_code=404, detail="Request not found")
+	if fr["from_user"] != username:
+		conn.close()
+		raise HTTPException(status_code=403, detail="Not allowed")
+	if fr["status"] != "pending":
+		conn.close()
+		return GenericResponse(success=False, message=f"Request already {fr['status']}")
+	cur.execute("DELETE FROM friend_requests WHERE id = ?", (request_id,))
+	conn.commit()
+	conn.close()
+	return GenericResponse(success=True, message="Request canceled")
+
+
 @app.get("/friend-requests")
 async def list_friend_requests(username: str = Depends(get_current_username)):
+	"""Return pending friend-requests both to you and from you.
+
+	Response shape matches swagger: { requestsToYou: [...], requestsFromYou: [...] }
+	Each entry contains at least id and friendName (the other user).
+	"""
 	conn = get_conn()
-	cur = conn.execute("SELECT id, from_user, status, created FROM friend_requests WHERE to_user = ?", (username,))
-	out = [dict(r) for r in cur.fetchall()]
+	# incoming pending requests (to you)
+	cur = conn.execute(
+		"SELECT id, from_user, status, created FROM friend_requests WHERE to_user = ? AND status = 'pending' ORDER BY created",
+		(username,),
+	)
+	requests_to_you = [
+		{"id": r["id"], "friendName": r["from_user"], "status": r["status"], "created": r["created"]}
+		for r in cur.fetchall()
+	]
+
+	# outgoing pending requests (from you)
+	cur2 = conn.execute(
+		"SELECT id, to_user, status, created FROM friend_requests WHERE from_user = ? AND status = 'pending' ORDER BY created",
+		(username,),
+	)
+	requests_from_you = [
+		{"id": r["id"], "friendName": r["to_user"], "status": r["status"], "created": r["created"]}
+		for r in cur2.fetchall()
+	]
+
 	conn.close()
-	return {"requests": out}
+	return {"requestsToYou": requests_to_you, "requestsFromYou": requests_from_you}
 
 
 @app.get("/friends")
