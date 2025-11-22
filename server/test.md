@@ -23,6 +23,13 @@ Login alice and save cookie jar:
 ```shell
 curl.exe -s -X POST http://localhost:8000/login -H "Content-Type: application/json" -d '{"username":"alice","password":"pass"}' -c alice_cookies.txt -D alice_headers.txt
 ```
+or 
+```shell
+curl.exe -i -s -X POST http://localhost:8000/login `
+  -H "Content-Type: application/json" `
+  -d '{"username":"alice","password":"pass"}' `
+  -c alice_cookies.txt -D alice_headers.txt -o alice_login_body.json
+```
 
 `-c alice_cookies.txt` saves the session cookie.
 
@@ -30,12 +37,28 @@ Login bob and save cookie jar:
 ```shell
 curl.exe -s -X POST http://localhost:8000/login -H "Content-Type: application/json" -d '{"username":"bob","password":"pass2"}' -c bob_cookies.txt -D bob_headers.txt
 ```
+or 
+```shell
+curl.exe -i -s -X POST http://localhost:8000/login `
+  -H "Content-Type: application/json" `
+  -d '{"username":"bob","password":"pass2"}' `
+  -c bob_cookies.txt -D bob_headers.txt -o bob_login_body.json
+```
 Create a friend request (alice -> bob) and get the request id
 ```shell
 curl.exe -s -X POST http://localhost:8000/friend-request -H "Content-Type: application/json" -d '{"friendUsername":"bob"}' -b alice_cookies.txt
 ```
+or 
+```shell
+curl.exe -s -X POST http://localhost:8000/friend-request `
+  -H "Content-Type: application/json" `
+  -d '{"friendUsername":"bob"}' `
+  -b alice_cookies.txt `
+  -o friend_resp.json
+```
+
 Use alice's cookie to authenticate:
-The response is JSON and, thanks to the small edit, includes "id": "<rid>". Copy that id for the next step.
+The response is in `friend_resp,json` and, thanks to the small edit, includes "id": "<rid>". Copy that id for the next step.
 
 
 Accept the friend request as bob. Suppose the id returned was abcdef123. Then (using bob's cookie):

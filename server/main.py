@@ -133,6 +133,17 @@ async def reject_friend_request(request_id: str, username: str = Depends(get_cur
 	return GenericResponse(success=True, message="Request rejected")
 
 
+@app.get("/friend-requests")
+async def list_friend_requests(username: str = Depends(get_current_username)):
+	"""Return friend requests for the current user (helpful for testing)."""
+	# collect requests where 'to' == username
+	out = []
+	for rid, fr in friend_requests.items():
+		if fr.get("to") == username:
+			out.append({"id": rid, "from": fr.get("from"), "status": fr.get("status"), "created": fr.get("created")})
+	return {"requests": out}
+
+
 @app.get("/friends")
 async def list_friends(username: str = Depends(get_current_username)):
 	friends = sorted(list(users[username]["friends"]))
