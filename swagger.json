@@ -407,7 +407,7 @@
         "type": "object",
         "properties": {
           "success": { "type": "boolean", "example": true },
-          "message": { "type": "string", "example": "Account created." }
+          "detail": { "type": "string", "example": "Account created." }
         }
       },
       "LoginRequest": {
@@ -422,7 +422,7 @@
         "type": "object",
         "properties": {
           "success": { "type": "boolean", "example": true },
-          "message": { "type": "string", "example": "Logged in." }
+          "detail": { "type": "string", "example": "Logged in." }
         }
       },
       "AuthCheckResponse": {
@@ -475,7 +475,7 @@
         "type": "object",
         "properties": {
           "success": { "type": "boolean", "example": true },
-          "message": { "type": "string", "example": "Operation completed." }
+          "detail": { "type": "string", "example": "Operation completed." }
         }
       }
     }
