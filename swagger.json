@@ -297,7 +297,7 @@
     },
     "/location": {
       "post": {
-        "summary": "Push current location",
+        "summary": "Report current position and retrieve recent friend locations",
         "security": [
           {
             "cookieAuth": []
@@ -315,11 +315,12 @@
         },
         "responses": {
           "200": {
-            "description": "Location stored",
+            "description": "Array of recent location entries for the supplied friends",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GenericSuccess"
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/LocationEntry" }
                 }
               }
             }
@@ -476,6 +477,16 @@
         "properties": {
           "success": { "type": "boolean", "example": true },
           "detail": { "type": "string", "example": "Operation completed." }
+        }
+      },
+      "LocationEntry": {
+        "type": "object",
+        "required": ["username", "latitude", "longitude", "ts"],
+        "properties": {
+          "username": { "type": "string" },
+          "latitude": { "type": "number", "format": "float" },
+          "longitude": { "type": "number", "format": "float" },
+          "ts": { "type": "string", "format": "date-time" }
         }
       }
     }

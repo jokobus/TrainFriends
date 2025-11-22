@@ -102,6 +102,18 @@ Expected SSE output in Terminal B (Bob):
 data: {"from":"alice","latitude":48.1371,"longitude":11.5754,"ts":"..."}
 ```
 
+Alternative: report your location and retrieve recent locations for a list of friends in a single call
+
+Alice (report + query friends):
+```powershell
+curl.exe -s -X POST http://localhost:8000/location -H "Content-Type: application/json" -H "Cookie: session_id=<alice_session>" -d '{"latitude":48.1371,"longitude":11.5754}'
+```
+
+Expected response (array of recent location entries for the supplied friends):
+```json
+[ { "username": "bob", "latitude": 48.1371, "longitude": 11.5754, "ts": "2025-11-22T...Z" } ]
+```
+
 If you see only the initial "connected" detail and no location event, verify that the friend relationship was established in step 4.
 
 ## Further functionalities (authCheck, logout, friend-requests, reject, cancel)

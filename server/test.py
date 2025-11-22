@@ -35,7 +35,7 @@ def main():
     print("bob login:", r.status_code)
 
     # alice sends friend request
-    r = a.post(f"{BASE}/friend-request", json={"friendUsername": "bob"})
+    r = a.post(f"{BASE}/friend-request/create", json={"friendUsername": "bob"})
     print("friend-request response:", r.text)
     req_json = r.json()
     rid = req_json.get("id")
@@ -50,9 +50,9 @@ def main():
     t.start()
 
     time.sleep(1)
-    # alice pushes location
+    # alice reports her location; server will return recent locations for Alice's friends (bob)
     r = a.post(f"{BASE}/location", json={"latitude": 48.1371, "longitude": 11.5754})
-    print("push location:", r.text)
+    print("location (report+query) response:", r.status_code, r.text)
 
     # wait a bit to receive SSE
     time.sleep(3)

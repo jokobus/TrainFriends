@@ -5,11 +5,17 @@ import uuid
 import asyncio
 import json
 from typing import Set, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import sqlite3
+import firebase_admin
+from firebase_admin import credentials
 from pathlib import Path
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
+
+cred = credentials.Certificate("firebase.json")
+firebase_admin.initialize_app(cred)
+
 
 app = FastAPI(
     title="TrainFriends - Simple Server",
@@ -58,6 +64,9 @@ class LocationPush(BaseModel):
 	longitude: float
 
 
+# LocationWithFriends removed: /location will determine friends from DB
+
+
 def get_conn():
 	# Ensure DB is initialized for the chosen DB_PATH before opening connections
 	global db_initialized
@@ -84,10 +93,18 @@ def init_db():
 		"""
 		CREATE TABLE IF NOT EXISTS users (
 			username TEXT PRIMARY KEY,
-			password TEXT NOT NULL,
-			last_latitude REAL,
-			last_longitude REAL,
-			last_ts TEXT
+			password TEXT NOT NULL
+		)
+		"""
+	)
+	# new table to store multiple location entries per user; entries are pruned after 15 minutes
+	cur.execute(
+		"""
+		CREATE TABLE IF NOT EXISTS locations (
+			username TEXT NOT NULL,
+			latitude REAL NOT NULL,
+			longitude REAL NOT NULL,
+			ts TEXT NOT NULL
 		)
 		"""
 	)
@@ -343,35 +360,44 @@ async def list_friends(username: str = Depends(get_current_username)):
 	return friends
 
 
-@app.post("/location", response_model=GenericResponse)
-async def push_location(loc: LocationPush, username: str = Depends(get_current_username)):
+@app.post("/location")
+async def location(loc: LocationPush, username: str = Depends(get_current_username)):
+	"""Store the caller's location in `locations`, prune older entries (15 minutes),
+	and return all recent location entries for the caller's friends (looked up from `friends`).
+
+	Request shape: { latitude: float, longitude: float }
+	Response: list of { username, latitude, longitude, ts }
+	"""
 	ts = datetime.utcnow().isoformat()
 	conn = get_conn()
+	# insert own location row
 	conn.execute(
-		"UPDATE users SET last_latitude = ?, last_longitude = ?, last_ts = ? WHERE username = ?",
-		(loc.latitude, loc.longitude, ts, username),
+		"INSERT INTO locations(username, latitude, longitude, ts) VALUES (?, ?, ?, ?)",
+		(username, loc.latitude, loc.longitude, ts),
 	)
-	conn.commit()
-	# prepare event
-	payload = {"from": username, "latitude": loc.latitude, "longitude": loc.longitude, "ts": ts}
-	data = json.dumps(payload)
+	# cleanup older than 15 minutes
+	cutoff = (datetime.utcnow() - timedelta(minutes=15)).isoformat()
+	conn.execute("DELETE FROM locations WHERE ts < ?", (cutoff,))
 
-	# push to all friends' queues (if they have open SSE connections)
-	cur = conn.execute("SELECT friend FROM friends WHERE user = ?", (username,))
-	friends = [r["friend"] for r in cur.fetchall()]
+	# determine friends from the friends table for the current user
+	cur_f = conn.execute("SELECT friend FROM friends WHERE user = ? ORDER BY friend", (username,))
+	friends = [r["friend"] for r in cur_f.fetchall()]
+	if not friends:
+		conn.commit()
+		conn.close()
+		return []
+
+	# query locations for the friends
+	placeholders = ",".join("?" for _ in friends)
+	cur = conn.execute(
+		f"SELECT username, latitude, longitude, ts FROM locations WHERE username IN ({placeholders}) ORDER BY ts",
+		tuple(friends),
+	)
+	rows = [ {"username": r["username"], "latitude": r["latitude"], "longitude": r["longitude"], "ts": r["ts"]} for r in cur.fetchall() ]
+	conn.commit()
 	conn.close()
 
-	for friend in friends:
-		queues = sse_queues.get(friend)
-		if not queues:
-			continue
-		for q in list(queues):
-			try:
-				q.put_nowait(data)
-			except asyncio.QueueFull:
-				pass
-
-	return GenericResponse(success=True, detail="Location stored")
+	return rows
 
 
 @app.get("/events")
