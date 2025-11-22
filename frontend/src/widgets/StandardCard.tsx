@@ -1,4 +1,4 @@
-import { Card } from "@mui/material";
+import { Card, CardContent } from "@mui/material";
 import { ComponentProps, ReactNode } from "react";
 
 export const StandardCard = ({
@@ -16,11 +16,15 @@ export const StandardCard = ({
           xl: "25vw",
         },
         height: "auto",
+        p: 2,
         ...props.sx,
       }}
       {...props}
     >
-      {children}
+      <CardContent sx = {{ padding: 0 }}>
+        {children}
+      </CardContent>
+
     </Card>
   );
 };

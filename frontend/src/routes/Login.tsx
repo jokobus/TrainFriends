@@ -5,6 +5,7 @@ import { useAuth } from "../providers/auth";
 import { Link } from "react-router-dom";
 import { PasswordInput } from "../widgets/PasswordInput";
 import { useTitle } from "../utils";
+import { StandardCard } from "../widgets/StandardCard";
 
 export const Login = () => {
   useTitle("Login");
@@ -41,11 +42,11 @@ export const Login = () => {
   }, [authState.isAuthenticated, state?.path, navigate]);
 
   return (
-    <Stack spacing={2} alignItems="center">
+    <StandardCard>
       <form onSubmit={handleLogin}>
         <Stack spacing={2} alignItems="center">
           <h2>Login</h2>
-          <TextField
+          <TextField  sx={{ width: 320, maxWidth: "100%", "@media (max-width:480px)": {width: "90vw", maxWidth: 320 }}} 
             required
             type="text"
             value={username}
@@ -53,8 +54,9 @@ export const Login = () => {
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Username"
           />
-          <PasswordInput
+          <PasswordInput sx={{ width: 320, maxWidth: "100%", "@media (max-width:480px)": {width: "90vw", maxWidth: 320 }}} 
             required
+            type="password"
             value={password}
             variant="standard"
             onChange={(e) => setPassword(e.target.value)}
@@ -64,12 +66,12 @@ export const Login = () => {
           {success && <p style={{ color: "green" }}>{success}</p>}
           <Button variant="contained" type="submit">
             Login
+          </Button>        
+          <Button component={Link} to="/signup">
+            Sign up instead
           </Button>
         </Stack>
       </form>
-      <Button component={Link} to="/signup">
-        Sign up instead
-      </Button>
-    </Stack>
+    </StandardCard>
   );
 };

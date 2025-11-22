@@ -44,19 +44,6 @@ console.log(
   "color: #007bff; font-family: monospace; font-size: 1em",
 );
 
-// Minimal Android detection for hackathon use: add a class so CSS can
-// provide extra spacing to avoid the system status bar overlapping the appbar.
-try {
-  if (typeof window !== "undefined") {
-    const ua = navigator.userAgent || "";
-    if (/Android/i.test(ua)) {
-      document.body.classList.add("platform-android");
-    }
-  }
-} catch (e) {
-  // ignore in restricted environments
-}
-
 const router = createBrowserRouter([
   {
     path: "/",
