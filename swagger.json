@@ -308,7 +308,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LocationPush"
+                "$ref": "#/components/schemas/Location"
               }
             }
           }
@@ -320,7 +320,7 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items": { "$ref": "#/components/schemas/LocationEntry" }
+                  "items": { "$ref": "#/components/schemas/LocationUser" }
                 }
               }
             }
@@ -433,14 +433,6 @@
               "username": { "type": "string", "example": "alice123" }
           }
       },
-      "LocationPush": {
-        "type": "object",
-        "required": ["latitude", "longitude"],
-        "properties": {
-          "latitude": { "type": "number", "format": "float", "example": 37.7749 },
-          "longitude": { "type": "number", "format": "float", "example": -122.4194 }
-        }
-      },
       "FriendList": {
           "type": "array",
           "items": { "type": "string", "example": "bob456" }
@@ -479,13 +471,20 @@
           "detail": { "type": "string", "example": "Operation completed." }
         }
       },
-      "LocationEntry": {
+      "Location": {
         "type": "object",
-        "required": ["username", "latitude", "longitude", "ts"],
+        "required": ["latitude", "longitude"],
+        "properties": {
+          "latitude": { "type": "number", "format": "float", "example": 37.7749 },
+          "longitude": { "type": "number", "format": "float", "example": -122.4194 }
+        }
+      },
+      "LocationUser": {
+        "type": "object",
+        "required": ["username", "location", "ts"],
         "properties": {
           "username": { "type": "string" },
-          "latitude": { "type": "number", "format": "float" },
-          "longitude": { "type": "number", "format": "float" },
+          "location": { "$ref": "#/components/schemas/Location" },
           "ts": { "type": "string", "format": "date-time" }
         }
       }

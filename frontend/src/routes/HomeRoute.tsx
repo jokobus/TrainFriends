@@ -1,5 +1,5 @@
-import { Stack, Typography } from "@mui/material";
-import { useMemo } from "react";
+import { Box, Stack, Typography } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
 import { StandardCard } from "../widgets/StandardCard";
 import { useAuthedState } from "../ProtectedRoute";
 import MapWidget, { LocationTuple } from "../widgets/MapWidget";
@@ -41,7 +41,8 @@ export const HomeRoute = () => {
           {greeting}, {userName}!
         </Typography>
         <Typography variant="body1" sx={{ pb: 2, px: 3 }}>
-          Welcome to <b>TrainFriends</b> — find friends that are riding the same train as you and connect for a nice chat.
+          Welcome to <b>TrainFriends</b> — find friends that are riding the same
+          train as you and connect for a nice chat.
         </Typography>
       </StandardCard>
 

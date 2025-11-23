@@ -13,6 +13,9 @@ import { FriendsRequestWidget } from "./widgets/FriendsRequestWidget";
 import { FriendsWidget } from "./widgets/FriendsWidget";
 import { AuthProvider } from "./providers/auth";
 import { AppThemeProvider } from "./providers/theme";
+import { BackgroundGeolocationPlugin } from "@capacitor-community/background-geolocation";
+import { registerPlugin } from "@capacitor/core";
+import { LocationProvider } from "./providers/location";
 
 // // Rickroll banner
 const banner = `
@@ -81,8 +84,35 @@ root.render(
   <React.StrictMode>
     <AppThemeProvider>
       <AuthProvider>
-        <RouterProvider router={router} />
+        <LocationProvider>
+          <RouterProvider router={router} />
+        </LocationProvider>
       </AuthProvider>
     </AppThemeProvider>
   </React.StrictMode>,
 );
+
+const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>(
+  "BackgroundGeolocation",
+);
+
+function guess_location(callback: (x: any) => void, timeout: number) {
+  let last_location: any;
+  BackgroundGeolocation.addWatcher(
+    {
+      backgroundMessage: "Cancel to prevent battery drain.",
+      backgroundTitle: "Tracking location.",
+      requestPermissions: true,
+      stale: false,
+    },
+    function (location) {
+      last_location = location || undefined;
+    },
+  ).then(function (id) {
+    setTimeout(function () {
+      callback(last_location);
+    }, timeout);
+  });
+}
+
+guess_location((location) => console.log(location), 1000);

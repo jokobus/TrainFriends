@@ -403,7 +403,7 @@ This endpoint does not have any parameters.
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **locationPost**
-> Array<LocationEntry> locationPost(locationPush)
+> Array<LocationUser> locationPost(location)
 
 
 ### Example
@@ -412,16 +412,16 @@ This endpoint does not have any parameters.
 import {
     DefaultApi,
     Configuration,
-    LocationPush
+    Location
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new DefaultApi(configuration);
 
-let locationPush: LocationPush; //
+let location: Location; //
 
 const { status, data } = await apiInstance.locationPost(
-    locationPush
+    location
 );
 ```
 
@@ -429,12 +429,12 @@ const { status, data } = await apiInstance.locationPost(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **locationPush** | **LocationPush**|  | |
+| **location** | **Location**|  | |
 
 
 ### Return type
 
-**Array<LocationEntry>**
+**Array<LocationUser>**
 
 ### Authorization
 

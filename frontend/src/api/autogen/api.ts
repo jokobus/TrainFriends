@@ -109,52 +109,46 @@ export interface GenericSuccess {
 /**
  * 
  * @export
- * @interface LocationEntry
+ * @interface Location
  */
-export interface LocationEntry {
-    /**
-     * 
-     * @type {string}
-     * @memberof LocationEntry
-     */
-    'username': string;
+export interface Location {
     /**
      * 
      * @type {number}
-     * @memberof LocationEntry
+     * @memberof Location
      */
     'latitude': number;
     /**
      * 
      * @type {number}
-     * @memberof LocationEntry
+     * @memberof Location
      */
     'longitude': number;
-    /**
-     * 
-     * @type {string}
-     * @memberof LocationEntry
-     */
-    'ts': string;
 }
 /**
  * 
  * @export
- * @interface LocationPush
+ * @interface LocationUser
  */
-export interface LocationPush {
+export interface LocationUser {
     /**
      * 
-     * @type {number}
-     * @memberof LocationPush
+     * @type {string}
+     * @memberof LocationUser
      */
-    'latitude': number;
+    'username': string;
     /**
      * 
-     * @type {number}
-     * @memberof LocationPush
+     * @type {Location}
+     * @memberof LocationUser
      */
-    'longitude': number;
+    'location': Location;
+    /**
+     * 
+     * @type {string}
+     * @memberof LocationUser
+     */
+    'ts': string;
 }
 /**
  * 
@@ -520,13 +514,13 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * 
          * @summary Report current position and retrieve recent friend locations
-         * @param {LocationPush} locationPush 
+         * @param {Location} location 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        locationPost: async (locationPush: LocationPush, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'locationPush' is not null or undefined
-            assertParamExists('locationPost', 'locationPush', locationPush)
+        locationPost: async (location: Location, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'location' is not null or undefined
+            assertParamExists('locationPost', 'location', location)
             const localVarPath = `/location`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -548,7 +542,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(locationPush, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(location, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -773,12 +767,12 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         /**
          * 
          * @summary Report current position and retrieve recent friend locations
-         * @param {LocationPush} locationPush 
+         * @param {Location} location 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async locationPost(locationPush: LocationPush, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<LocationEntry>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.locationPost(locationPush, options);
+        async locationPost(location: Location, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<LocationUser>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.locationPost(location, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.locationPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -915,8 +909,8 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        locationPost(requestParameters: DefaultApiLocationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<LocationEntry>> {
-            return localVarFp.locationPost(requestParameters.locationPush, options).then((request) => request(axios, basePath));
+        locationPost(requestParameters: DefaultApiLocationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<LocationUser>> {
+            return localVarFp.locationPost(requestParameters.location, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1028,10 +1022,10 @@ export interface DefaultApiFriendsFriendUsernameDeleteRequest {
 export interface DefaultApiLocationPostRequest {
     /**
      * 
-     * @type {LocationPush}
+     * @type {Location}
      * @memberof DefaultApiLocationPost
      */
-    readonly locationPush: LocationPush
+    readonly location: Location
 }
 
 /**
@@ -1171,7 +1165,7 @@ export class DefaultApi extends BaseAPI {
      * @memberof DefaultApi
      */
     public locationPost(requestParameters: DefaultApiLocationPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).locationPost(requestParameters.locationPush, options).then((request) => request(this.axios, this.basePath));
+        return DefaultApiFp(this.configuration).locationPost(requestParameters.location, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

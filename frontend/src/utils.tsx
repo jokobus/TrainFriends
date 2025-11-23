@@ -120,29 +120,28 @@ export const handleApiErr = (error: any): string => {
   if (error.response) {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
-    console.log(error.response.data.detail);
-    console.log(error.response.status);
-    console.log(error.response.headers);
-    // Server may already include an "Error:" prefix. Normalize to a single prefix.
-    let detail = String(error.response.data?.detail ?? "");
-    errMsg = detail;
+    console.error(error.response.data.detail);
+    console.error(error.response.status);
+    console.error(error.response.headers);
+    errMsg = String(error.response.data?.detail ?? "");
   } else if (error.request) {
     // The request was made but no response was received
     // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
     // http.ClientRequest in node.js
-    console.log(error.request);
-    errMsg = "Error: No response received" + (error.request ? ": " + String(error.request) : "");
+    console.error(error.request);
+    errMsg =
+      "No response received" +
+      (error.request ? ": " + String(error.request) : "");
   } else if (error.message) {
     // Something happened in setting up the request that triggered an Error
-    console.log(error.message);
-    let msg = String(error.message ?? "");
-    errMsg = "Error: " + msg;
+    console.error(error.message);
+    errMsg = String(error.message ?? "");
   } else {
-    console.log("Error: Unkown Error");
-    return "Error: Unknown Error";
+    console.error("Unkown Error");
+    return "Unknown Error";
   }
 
-  console.log(error.config);
+  console.error(error.config);
   return errMsg;
 };
 

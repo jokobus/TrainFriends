@@ -9,6 +9,9 @@ const config: CapacitorConfig = {
       enabled: true,
     },
   },
+  android: {
+    useLegacyBridge: true,
+  },
 };
 
 export default config;

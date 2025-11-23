@@ -4,7 +4,7 @@ import checker from "vite-plugin-checker";
 import eslint from "vite-plugin-eslint";
 
 export default ({ mode }) => {
-  const isDebug = mode === "debug";
+  const isDebug = mode === "debug" || mode === "prod-debug";
 
   return {
     publicDir: "public",
