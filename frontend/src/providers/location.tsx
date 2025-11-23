@@ -22,6 +22,8 @@ export interface LocationProps {
 
 export type LocationContextType = {
   locationState: LocationProps;
+  locationEnabled: boolean;
+  setLocationEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const LocationContext = createContext<LocationContextType | undefined>(
@@ -40,6 +42,12 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
   });
   const watcherRef = useRef<string | null>(null);
   const { isAuthenticated } = useAuthState();
+
+  // persisted toggle that allows user to disable sending location to server
+  const [locationEnabled, setLocationEnabled] = useLocalStorage<boolean>(
+    "location.enabled",
+    true,
+  );
 
   const timeout = 10 * 1000; // ½ minute
 
@@ -76,14 +84,17 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
         userLocation: userLocation,
       }));
       try {
-        const response = await Api.locationPost({
-          location: {
-            latitude: userLocation.latitude,
-            longitude: userLocation.longitude,
-          },
-        });
+        // Only send to server if user enabled location sharing
+        if (locationEnabled) {
+          const response = await Api.locationPost({
+            location: {
+              latitude: userLocation.latitude,
+              longitude: userLocation.longitude,
+            },
+          });
 
-        setLocationState((ls) => ({ ...ls, friendLocations: response.data }));
+          setLocationState((ls) => ({ ...ls, friendLocations: response.data }));
+        }
       } catch (e: any) {
         console.error(handleApiErr(e));
       }
@@ -94,7 +105,9 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
   }, [isAuthenticated]);
 
   return (
-    <LocationContext.Provider value={{ locationState }}>
+    <LocationContext.Provider
+      value={{ locationState, locationEnabled, setLocationEnabled }}
+    >
       {children}
     </LocationContext.Provider>
   );

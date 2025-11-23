@@ -10,13 +10,16 @@ import {
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import { useAuthState, useAuth } from "../providers/auth";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation as useRouterLocation, useNavigate } from "react-router";
+import { useLocation as useLocationProvider } from "../providers/location";
 import { LinkWidget } from "./LinkWidget";
 
 import HelpIcon from "@mui/icons-material/Help";
 import QrCodeIcon from "@mui/icons-material/QrCode";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import LocationOffIcon from "@mui/icons-material/LocationOff";
 
 import logo from "../assets/logo.png";
 import PopupState, { bindPopover, bindTrigger } from "material-ui-popup-state";
@@ -28,17 +31,24 @@ import { useAppTheme } from "../providers/theme";
 
 export const AppBarWidget = () => {
   const { isAuthenticated } = useAuthState();
-  const location = useLocation();
+  const routerLocation = useRouterLocation();
   const navigate = useNavigate();
   const theme = useTheme();
   const { mode, toggleMode } = useAppTheme();
 
   const navToLogin = () => {
     navigate("/login", {
-      state: { from: location.pathname },
+      state: { from: routerLocation.pathname },
       replace: true,
     });
   };
+
+  // location provider controls
+  const {
+    locationState: _ls,
+    locationEnabled,
+    setLocationEnabled,
+  } = useLocationProvider();
 
   const loginButton = (
     <Button
@@ -103,6 +113,21 @@ export const AppBarWidget = () => {
           )}
         </PopupState>
   {isAuthenticated ? loggedinBarActions : loginButton}
+        {/* Location sharing toggle as a single button */}
+        <Box sx={{ display: "flex", alignItems: "center", ml: 1, mr: 1 }}>
+          <Tooltip title={locationEnabled ? "Stop sharing location" : "Share location with server"}>
+            <IconButton
+              onClick={() => setLocationEnabled(!locationEnabled)}
+              color={locationEnabled ? "inherit" : "default"}
+              aria-pressed={locationEnabled}
+              aria-label="toggle location sharing"
+              sx={{ p: 0, width: 40, height: 40 }}
+            >
+              {locationEnabled ? <LocationOnIcon fontSize="small" /> : <LocationOffIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+        </Box>
+
         {/* Single icon toggle for dark mode (sun/moon) */}
         <Box sx={{ display: "flex", alignItems: "center", ml: 1 }}>
           <Tooltip title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
