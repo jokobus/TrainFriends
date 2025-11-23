@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { ReactElement, useState } from "react";
 import { Button, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import { Api } from "../api";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -14,7 +14,7 @@ interface SignupData {
   password: string;
 }
 
-export const Signup = (): JSX.Element => {
+export const Signup = (): ReactElement => {
   useTitle(`Signup`);
   const [signupData, setSignupData] = useState<SignupData>({
     name: "",
@@ -85,7 +85,12 @@ export const Signup = (): JSX.Element => {
       <form onSubmit={handleSubmit}>
         <Stack spacing={2} alignItems="center">
           <h2>Sign Up</h2>
-          <TextField  sx={{ width: 320, maxWidth: "100%", "@media (max-width:480px)": {width: "90vw", maxWidth: 320 }}} 
+          <TextField
+            sx={{
+              width: 320,
+              maxWidth: "100%",
+              "@media (max-width:480px)": { width: "90vw", maxWidth: 320 },
+            }}
             type="text"
             name="name"
             variant="standard"
@@ -94,7 +99,12 @@ export const Signup = (): JSX.Element => {
             placeholder="Username"
             required
           />
-          <TextField  sx={{ width: 320, maxWidth: "100%", "@media (max-width:480px)": {width: "90vw", maxWidth: 320 }}} 
+          <TextField
+            sx={{
+              width: 320,
+              maxWidth: "100%",
+              "@media (max-width:480px)": { width: "90vw", maxWidth: 320 },
+            }}
             type="password"
             name="password"
             variant="standard"
@@ -103,7 +113,12 @@ export const Signup = (): JSX.Element => {
             placeholder="Password"
             required
           />
-          <TextField  sx={{ width: 320, maxWidth: "100%", "@media (max-width:480px)": {width: "90vw", maxWidth: 320 }}} 
+          <TextField
+            sx={{
+              width: 320,
+              maxWidth: "100%",
+              "@media (max-width:480px)": { width: "90vw", maxWidth: 320 },
+            }}
             type="password"
             name="confirmPassword"
             variant="standard"
@@ -115,9 +130,7 @@ export const Signup = (): JSX.Element => {
           <Button type="submit" variant="contained" disabled={loading}>
             Sign up
           </Button>
-          {
-            succeeded && "Logging in"
-          }
+          {succeeded && "Logging in"}
           {error && <p style={{ color: "red" }}>Error: {error}</p>}
           {info && <p style={{ color: "green" }}>{info}</p>}
           <Button component={Link} to="/login">

@@ -8,7 +8,7 @@ import ErrorPage from "./error-page";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { Signup } from "./routes/Signup";
 import { Login } from "./routes/Login";
-import HomeRoute from "./routes/HomeRoute";
+import { HomeRoute } from "./routes/HomeRoute";
 import { FriendsRequestWidget } from "./widgets/FriendsRequestWidget";
 import { FriendsWidget } from "./widgets/FriendsWidget";
 import { AuthProvider } from "./providers/auth";

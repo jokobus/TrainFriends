@@ -46,7 +46,12 @@ export const Login = () => {
       <form onSubmit={handleLogin}>
         <Stack spacing={2} alignItems="center">
           <h2>Login</h2>
-          <TextField  sx={{ width: 320, maxWidth: "100%", "@media (max-width:480px)": {width: "90vw", maxWidth: 320 }}} 
+          <TextField
+            sx={{
+              width: 320,
+              maxWidth: "100%",
+              "@media (max-width:480px)": { width: "90vw", maxWidth: 320 },
+            }}
             required
             type="text"
             value={username}
@@ -54,9 +59,13 @@ export const Login = () => {
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Username"
           />
-          <PasswordInput sx={{ width: 320, maxWidth: "100%", "@media (max-width:480px)": {width: "90vw", maxWidth: 320 }}} 
+          <PasswordInput
+            sx={{
+              width: 320,
+              maxWidth: "100%",
+              "@media (max-width:480px)": { width: "90vw", maxWidth: 320 },
+            }}
             required
-            type="password"
             value={password}
             variant="standard"
             onChange={(e) => setPassword(e.target.value)}
@@ -66,7 +75,7 @@ export const Login = () => {
           {success && <p style={{ color: "green" }}>{success}</p>}
           <Button variant="contained" type="submit">
             Login
-          </Button>        
+          </Button>
           <Button component={Link} to="/signup">
             Sign up instead
           </Button>

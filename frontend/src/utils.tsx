@@ -70,7 +70,7 @@ export function useLocalStorage<T>(
 
 // https://stackoverflow.com/a/66494926/13534562
 export const stringToColor = (str: string): string => {
-  let stringUniqueHash = [...str].reduce((acc, char) => {
+  const stringUniqueHash = [...str].reduce((acc, char) => {
     return char.charCodeAt(0) + ((acc << 5) - acc);
   }, 0);
   return `hsl(${stringUniqueHash % 360}, 95%, 35%)`;
@@ -115,7 +115,7 @@ export function arraySwap<T>(arr: T[], i: number, j: number) {
 export const handleApiErr = (error: any): string => {
   console.log(error);
 
-  var errMsg;
+  let errMsg;
 
   if (error.response) {
     // The request was made and the server responded with a status code
@@ -256,7 +256,7 @@ export const useApi: IntersectionToRenderedIntersectionApi<ApiMethod> = <
       );
       setLoading(false);
     },
-    [method, ...Object.values(fnExtraParams ?? {})], // eslint-disable-line react-hooks/exhaustive-deps
+    [method, ...Object.values(fnExtraParams ?? {})],
   );
 
   const res: ApiFnRet<T> = [error, sendReq, loading];
@@ -328,7 +328,7 @@ export const useApiState: IntersectionToRenderedIntersectionApiState<
 ) => {
   type Data = ApiReturnType<T>;
   const [data, setData] = useState<Data | null>(null);
-  // @ts-ignore
+  // @ts-expect-error Typsystem of Typescript not smart enough here
   const [error, cb, loading] = useApi<T>(method);
 
   const onSuccess = extraParams?.onSuccess;
@@ -366,7 +366,7 @@ type Endpoints = {
 
 // helper to have autocompletion for the strings of all endpoints, should be used like this:
 /* const [friends, setFriends, loadingFr, errorFr] = useApiState(DApi.apiFriendsGet); */
-// @ts-ignore
+// @ts-expect-error Typsystem of Typescript not smart enough here
 export const DApi: Endpoints = Object.fromEntries(
   Object.keys(Api).map((endpoint) => [endpoint, endpoint]),
 );
