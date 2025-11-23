@@ -1,12 +1,19 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from "react-leaflet";
+import {
+  TileLayer,
+  Popup,
+  CircleMarker,
+  useMap,
+  MapContainer,
+} from "react-leaflet";
 import L from "leaflet";
 
 // Ensure marker icons load correctly with Vite bundling
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
+import { LocationUser } from "../api";
 
 L.Icon.Default.mergeOptions({
   iconUrl,
@@ -14,11 +21,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl,
 });
 
-// location tuple: [username, [lng, lat], timestamp]
-export type LocationTuple = [string, [number, number], string];
-
 export const MapWidget: React.FC<{
-  locations: LocationTuple[];
+  locations: LocationUser[];
   /** Optional color mapping or color palette. If object, keys are usernames (case-insensitive). If array, colors assigned in order of unique users. */
   colors?: Record<string, string> | string[];
 }> = ({ locations, colors }) => {
@@ -36,25 +40,31 @@ export const MapWidget: React.FC<{
 
   const recent = locations
     .map((loc) => {
-      const [user, coords, timestamp] = loc;
-      const t = typeof timestamp === "string" ? Date.parse(timestamp) : Number(timestamp);
+      const t = Date.parse(loc.ts);
       const ageMs = now - t;
-      return { user, coords, timestamp: t, ageMs };
+      return { ...loc, timestamp: t, ageMs };
     })
-    .filter((l) => !Number.isNaN(l.timestamp) && l.ageMs >= 0 && l.ageMs <= FIFTEEN_MIN_MS);
+    .filter(
+      (l) =>
+        !Number.isNaN(l.timestamp) && l.ageMs >= 0 && l.ageMs <= FIFTEEN_MIN_MS,
+    );
 
   if (recent.length === 0) {
     return (
       <Box sx={{ p: 2 }}>
-        <Typography align="center">No recent location data (last 15 min)</Typography>
+        <Typography align="center">
+          No recent location data (last 15 min)
+        </Typography>
       </Box>
     );
   }
 
   // convert to Leaflet's [lat, lng] order for bounds
-  const latLngs = recent.map((r) => [r.coords[1], r.coords[0]] as [number, number]);
-  const center = latLngs.length === 1 ? latLngs[0] : undefined;
+  const latLngs = recent.map(
+    (r) => [r.location.latitude, r.location.longitude] as [number, number],
+  );
 
+  // FIXME: assign colors based on username
   // Build color mapping for users present in `recent`.
   const defaultPalette = [
     "#d9534f",
@@ -75,12 +85,12 @@ export const MapWidget: React.FC<{
   const uniqueUsersLower: string[] = [];
   const firstSeenName: Record<string, string> = {};
   recent.forEach((r) => {
-    const k = r.user.toLowerCase();
-    if (!firstSeenName[k]) firstSeenName[k] = r.user;
+    const k = r.username.toLowerCase();
+    if (!firstSeenName[k]) firstSeenName[k] = r.username;
     if (!uniqueUsersLower.includes(k)) uniqueUsersLower.push(k);
   });
 
-  let colorMap: Record<string, string> = {};
+  const colorMap: Record<string, string> = {};
   if (colors && !Array.isArray(colors)) {
     // user provided explicit map; normalize keys to lowercase
     Object.entries(colors).forEach(([k, v]) => (colorMap[k.toLowerCase()] = v));
@@ -89,8 +99,11 @@ export const MapWidget: React.FC<{
       if (!colorMap[u]) colorMap[u] = defaultPalette[i % defaultPalette.length];
     });
   } else {
-    const palette = Array.isArray(colors) && colors.length > 0 ? colors : defaultPalette;
-    uniqueUsersLower.forEach((u, i) => (colorMap[u] = palette[i % palette.length]));
+    const palette =
+      Array.isArray(colors) && colors.length > 0 ? colors : defaultPalette;
+    uniqueUsersLower.forEach(
+      (u, i) => (colorMap[u] = palette[i % palette.length]),
+    );
   }
 
   // MapAutoSize must be rendered inside MapContainer; it uses useMap() to invalidate and fit bounds
@@ -115,35 +128,68 @@ export const MapWidget: React.FC<{
     return null;
   };
 
+  const latLngBnd =
+    latLngs.length > 1 ? (L.latLngBounds(latLngs) as any) : undefined;
+
   return (
-    <Box sx={{ width: 1000, maxWidth: "100%", height: 420, "@media (max-width:480px)": { width: "90vw", maxWidth: 320 } }}>
+    <Box
+      sx={{
+        width: 1000,
+        maxWidth: "100%",
+        height: 420,
+      }}
+    >
       {/* Legend: username -> color (dynamic based on recent users) */}
-      <Box sx={{ display: "flex", gap: 2, justifyContent: "center", pb: 1, flexWrap: "wrap" }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          justifyContent: "center",
+          pb: 1,
+          flexWrap: "wrap",
+        }}
+      >
         {uniqueUsersLower.map((u) => (
           <Box key={u} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: colorMap[u] }} />
+            <Box
+              sx={{
+                width: 12,
+                height: 12,
+                borderRadius: "50%",
+                backgroundColor: colorMap[u],
+              }}
+            />
             <Typography variant="caption">{firstSeenName[u]}</Typography>
           </Box>
         ))}
       </Box>
       <MapContainer
-        center={center}
-        bounds={latLngs.length > 1 ? (L.latLngBounds(latLngs) as any) : undefined}
+        center={
+          latLngs.length === 1
+            ? latLngs[0]
+            : latLngBnd
+              ? latLngBnd.getCenter()
+              : undefined
+        }
+        bounds={latLngBnd}
         zoom={13}
-        // style ={{ width: 320, maxWidth: "100%", "@media (max-width:480px)": {width: "90vw", maxWidth: 320 }}} 
+        // style ={{ width: 320, maxWidth: "100%", "@media (max-width:480px)": {width: "90vw", maxWidth: 320 }}}
         style={{ width: "100%", height: "100%" }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapAutoSize bounds={latLngs.length > 1 ? (L.latLngBounds(latLngs) as any) : undefined} />
+        <MapAutoSize bounds={latLngBnd} />
 
-        {recent.map(({ user, coords, timestamp, ageMs }, idx) => {
-          const position: [number, number] = [coords[1], coords[0]]; // [lat, lng]
+        {recent.map(({ username, location, timestamp, ageMs }, idx) => {
+          const position: [number, number] = [
+            location.latitude,
+            location.longitude,
+          ];
 
           // Map username -> color (from computed colorMap)
-          const uname = user.toLowerCase();
+          const uname = username.toLowerCase();
           const color = colorMap[uname] ?? defaultPalette[0];
 
           // Compute opacity: transparency increases from 0 to 0.7 over 15 minutes
@@ -153,14 +199,19 @@ export const MapWidget: React.FC<{
 
           return (
             <CircleMarker
-              key={`${user}-${idx}`}
+              key={`${username}-${idx}`}
               center={position}
               radius={8}
-              pathOptions={{ color, fillColor: color, opacity: opacity, fillOpacity: opacity }}
+              pathOptions={{
+                color,
+                fillColor: color,
+                opacity: opacity,
+                fillOpacity: opacity,
+              }}
             >
               <Popup>
                 <div style={{ minWidth: 140 }}>
-                  <strong>{user}</strong>
+                  <strong>{username}</strong>
                   <div>{new Date(timestamp).toLocaleString()}</div>
                   <div style={{ fontSize: 12, color: "#666" }}>
                     {position[0].toFixed(5)}, {position[1].toFixed(5)}
@@ -174,6 +225,3 @@ export const MapWidget: React.FC<{
     </Box>
   );
 };
-
-export default MapWidget;
- 
