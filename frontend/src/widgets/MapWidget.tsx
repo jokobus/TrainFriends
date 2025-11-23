@@ -21,6 +21,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl,
 });
 
+// https://stackoverflow.com/a/66494926/13534562
+export const stringToColor = (str: string): string => {
+  const stringUniqueHash = [...str].reduce((acc, char) => {
+    return char.charCodeAt(0) + ((acc << 5) - acc);
+  }, 0);
+  return `hsl(${stringUniqueHash % 360}, 95%, 35%)`;
+};
+
 export const MapWidget: React.FC<{
   locations: LocationUser[];
   /** Optional color mapping or color palette. If object, keys are usernames (case-insensitive). If array, colors assigned in order of unique users. */
@@ -64,23 +72,6 @@ export const MapWidget: React.FC<{
     (r) => [r.location.latitude, r.location.longitude] as [number, number],
   );
 
-  // FIXME: assign colors based on username
-  // Build color mapping for users present in `recent`.
-  const defaultPalette = [
-    "#d9534f",
-    "#0275d8",
-    "#5cb85c",
-    "#6f42c1",
-    "#f0ad4e",
-    "#20c997",
-    "#e83e8c",
-    "#795548",
-    "#17a2b8",
-    "#cddc39",
-    "#ff69b4",
-    "#6c757d",
-  ];
-
   // Preserve first-seen original casing for legend display, and collect unique lowercase usernames in order
   const uniqueUsersLower: string[] = [];
   const firstSeenName: Record<string, string> = {};
@@ -91,20 +82,7 @@ export const MapWidget: React.FC<{
   });
 
   const colorMap: Record<string, string> = {};
-  if (colors && !Array.isArray(colors)) {
-    // user provided explicit map; normalize keys to lowercase
-    Object.entries(colors).forEach(([k, v]) => (colorMap[k.toLowerCase()] = v));
-    // ensure every user has a color (fallback to defaults)
-    uniqueUsersLower.forEach((u, i) => {
-      if (!colorMap[u]) colorMap[u] = defaultPalette[i % defaultPalette.length];
-    });
-  } else {
-    const palette =
-      Array.isArray(colors) && colors.length > 0 ? colors : defaultPalette;
-    uniqueUsersLower.forEach(
-      (u, i) => (colorMap[u] = palette[i % palette.length]),
-    );
-  }
+  uniqueUsersLower.forEach(u => (colorMap[u] = stringToColor(u)));
 
   // MapAutoSize must be rendered inside MapContainer; it uses useMap() to invalidate and fit bounds
   const MapAutoSize: React.FC<{ bounds?: any }> = ({ bounds }) => {
@@ -190,7 +168,7 @@ export const MapWidget: React.FC<{
 
           // Map username -> color (from computed colorMap)
           const uname = username.toLowerCase();
-          const color = colorMap[uname] ?? defaultPalette[0];
+          const color = colorMap[uname]
 
           // Compute opacity: transparency increases from 0 to 0.7 over 15 minutes
           // transparency = (age / 15min) * 0.7, so opacity = 1 - transparency
