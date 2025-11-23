@@ -91,28 +91,3 @@ root.render(
     </AppThemeProvider>
   </React.StrictMode>,
 );
-
-const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>(
-  "BackgroundGeolocation",
-);
-
-function guess_location(callback: (x: any) => void, timeout: number) {
-  let last_location: any;
-  BackgroundGeolocation.addWatcher(
-    {
-      backgroundMessage: "Cancel to prevent battery drain.",
-      backgroundTitle: "Tracking location.",
-      requestPermissions: true,
-      stale: false,
-    },
-    function (location) {
-      last_location = location || undefined;
-    },
-  ).then(function (id) {
-    setTimeout(function () {
-      callback(last_location);
-    }, timeout);
-  });
-}
-
-guess_location((location) => console.log(location), 1000);

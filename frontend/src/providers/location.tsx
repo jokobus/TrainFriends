@@ -79,7 +79,7 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
         const response = await Api.locationPost({
           location: {
             latitude: userLocation.latitude,
-            longitude: userLocation.latitude,
+            longitude: userLocation.longitude,
           },
         });
 

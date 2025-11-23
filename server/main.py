@@ -5,7 +5,7 @@ import uuid
 import asyncio
 import json
 from typing import Set, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import sqlite3
 import firebase_admin
 from firebase_admin import credentials
@@ -440,7 +440,7 @@ async def location(loc: Location, username: str = Depends(get_current_username))
     Request shape: { latitude: float, longitude: float }
     Response: list of { username, latitude, longitude, ts }
     """
-    ts = datetime.utcnow().isoformat()
+    ts = datetime.now(UTC).isoformat()
     conn = get_conn()
     # insert own location row
     conn.execute(
