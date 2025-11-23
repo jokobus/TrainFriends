@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Alert } from "@mui/material";
 import {
   TileLayer,
   Popup,
@@ -14,6 +14,7 @@ import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 import { LocationUser } from "../api";
+import { useLocation } from "../providers/location";
 
 L.Icon.Default.mergeOptions({
   iconUrl,
@@ -34,9 +35,18 @@ export const MapWidget: React.FC<{
   /** Optional color mapping or color palette. If object, keys are usernames (case-insensitive). If array, colors assigned in order of unique users. */
   colors?: Record<string, string> | string[];
 }> = ({ locations, colors }) => {
+  // read locationEnabled from provider to display a message when server updates are disabled
+  const { locationEnabled } = useLocation();
   if (!locations || locations.length === 0) {
     return (
       <Box sx={{ p: 2 }}>
+        {!locationEnabled && (
+          <Box sx={{ pb: 1 }}>
+            <Alert severity="info" variant="outlined" sx={{ fontSize: 13 }}>
+              Location sharing is turned off — server updates are paused.
+            </Alert>
+          </Box>
+        )}
         <Typography align="center">No location data</Typography>
       </Box>
     );
@@ -60,9 +70,14 @@ export const MapWidget: React.FC<{
   if (recent.length === 0) {
     return (
       <Box sx={{ p: 2 }}>
-        <Typography align="center">
-          No recent location data (last 15 min)
-        </Typography>
+        {!locationEnabled && (
+          <Box sx={{ pb: 1 }}>
+            <Alert severity="info" variant="outlined" sx={{ fontSize: 13 }}>
+              Location sharing is turned off — server updates are paused.
+            </Alert>
+          </Box>
+        )}
+        <Typography align="center">No recent location data (last 15 min)</Typography>
       </Box>
     );
   }
@@ -117,6 +132,14 @@ export const MapWidget: React.FC<{
         height: 420,
       }}
     >
+      {/* If location sharing is disabled, show a short informational message */}
+      {!locationEnabled && (
+        <Box sx={{ px: 2, pb: 1 }}>
+          <Alert severity="info" variant="outlined" sx={{ fontSize: 13 }}>
+            Location sharing is turned off — server updates are paused.
+          </Alert>
+        </Box>
+      )}
       {/* Legend: username -> color (dynamic based on recent users) */}
       <Box
         sx={{
