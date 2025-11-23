@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import { AxiosPromise } from "axios";
 import { Typography } from "@mui/material";
-import { Api } from "./api";
+import { Api, Location } from "./api";
 import { useDeepCompareEffectNoCheck } from "use-deep-compare-effect";
 
 export type Nullable<T> = T | null | undefined;
@@ -384,3 +384,27 @@ export function useTitle(arg: string | (() => string)) {
     };
   }, [arg]);
 }
+
+export const randomInt32 = (): number => {
+  return Math.floor(Math.random() * 0x100000000) - 0x80000000; // shift range
+};
+
+// see https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
+export const getDistanceFromLatLonInKm = (x: Location, y: Location): number => {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(y.latitude - x.latitude); // deg2rad below
+  const dLon = deg2rad(y.longitude - x.longitude);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(x.latitude)) *
+      Math.cos(deg2rad(y.latitude)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+};
+
+export const deg2rad = (deg: number): number => {
+  return deg * (Math.PI / 180);
+};

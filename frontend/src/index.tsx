@@ -2,7 +2,6 @@ import React from "react";
 import "leaflet/dist/leaflet.css";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
-import CssBaseline from "@mui/material/CssBaseline/CssBaseline";
 import Frame from "./routes/Frame";
 import ErrorPage from "./error-page";
 import { ProtectedRoute } from "./ProtectedRoute";
@@ -13,8 +12,6 @@ import { FriendsRequestWidget } from "./widgets/FriendsRequestWidget";
 import { FriendsWidget } from "./widgets/FriendsWidget";
 import { AuthProvider } from "./providers/auth";
 import { AppThemeProvider } from "./providers/theme";
-import { BackgroundGeolocationPlugin } from "@capacitor-community/background-geolocation";
-import { registerPlugin } from "@capacitor/core";
 import { LocationProvider } from "./providers/location";
 
 // // Rickroll banner
@@ -81,13 +78,11 @@ const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
 );
 root.render(
-  <React.StrictMode>
-    <AppThemeProvider>
-      <AuthProvider>
-        <LocationProvider>
-          <RouterProvider router={router} />
-        </LocationProvider>
-      </AuthProvider>
-    </AppThemeProvider>
-  </React.StrictMode>,
+  <AppThemeProvider>
+    <AuthProvider>
+      <LocationProvider>
+        <RouterProvider router={router} />
+      </LocationProvider>
+    </AuthProvider>
+  </AppThemeProvider>,
 );

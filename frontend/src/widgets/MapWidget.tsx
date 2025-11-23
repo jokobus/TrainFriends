@@ -35,9 +35,34 @@ export const MapWidget: React.FC<{
   /** Optional color mapping or color palette. If object, keys are usernames (case-insensitive). If array, colors assigned in order of unique users. */
   colors?: Record<string, string> | string[];
 }> = ({ locations, colors }) => {
-  // read locationEnabled from provider to display a message when server updates are disabled
+  const firstRenderpRef = React.useRef(true);
   const { locationEnabled } = useLocation();
-  if (!locations || locations.length === 0) {
+
+  const SetInitialParams = ({
+    bounds,
+    center,
+    zoom,
+  }: {
+    bounds: any;
+    center: any;
+    zoom: any;
+  }) => {
+    const map = useMap();
+    React.useEffect(() => {
+      if (firstRenderpRef.current) {
+        console.log("Setting initial map view");
+        map.setView(center, zoom);
+        if (locations.length > 1 && bounds) {
+          console.log("Fitting bounds:", bounds);
+          map.fitBounds(bounds);
+        }
+      }
+      firstRenderpRef.current = false;
+    }, []);
+    return null;
+  };
+
+  if (!locations || locations.length <= 1) {
     return (
       <Box sx={{ p: 2 }}>
         {!locationEnabled && (
@@ -77,7 +102,9 @@ export const MapWidget: React.FC<{
             </Alert>
           </Box>
         )}
-        <Typography align="center">No recent location data (last 15 min)</Typography>
+        <Typography align="center">
+          No recent location data (last 15 min)
+        </Typography>
       </Box>
     );
   }
@@ -97,32 +124,11 @@ export const MapWidget: React.FC<{
   });
 
   const colorMap: Record<string, string> = {};
-  uniqueUsersLower.forEach(u => (colorMap[u] = stringToColor(u)));
-
-  // MapAutoSize must be rendered inside MapContainer; it uses useMap() to invalidate and fit bounds
-  const MapAutoSize: React.FC<{ bounds?: any }> = ({ bounds }) => {
-    const map = useMap();
-    React.useEffect(() => {
-      const t = setTimeout(() => {
-        try {
-          map.invalidateSize();
-          if (bounds) map.fitBounds(bounds);
-        } catch (e) {
-          /* ignore */
-        }
-      }, 150);
-      const onResize = () => map.invalidateSize();
-      window.addEventListener("resize", onResize);
-      return () => {
-        clearTimeout(t);
-        window.removeEventListener("resize", onResize);
-      };
-    }, [map, bounds]);
-    return null;
-  };
+  uniqueUsersLower.forEach((u) => (colorMap[u] = stringToColor(u)));
 
   const latLngBnd =
     latLngs.length > 1 ? (L.latLngBounds(latLngs) as any) : undefined;
+  console.log("latLngBnd:", latLngBnd);
 
   return (
     <Box
@@ -164,24 +170,25 @@ export const MapWidget: React.FC<{
           </Box>
         ))}
       </Box>
-      <MapContainer
-        center={
-          latLngs.length === 1
-            ? latLngs[0]
-            : latLngBnd
-              ? latLngBnd.getCenter()
-              : undefined
-        }
-        bounds={latLngBnd}
-        zoom={13}
-        // style ={{ width: 320, maxWidth: "100%", "@media (max-width:480px)": {width: "90vw", maxWidth: 320 }}}
-        style={{ width: "100%", height: "100%" }}
-      >
+      <MapContainer style={{ width: "100%", height: "100%" }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapAutoSize bounds={latLngBnd} />
+        {
+          <SetInitialParams
+            center={
+              latLngs.length === 1
+                ? latLngs[0]
+                : latLngBnd
+                  ? latLngBnd.getCenter()
+                  : undefined
+            }
+            bounds={latLngBnd}
+            zoom={13}
+          />
+          // <MapAutoSize bounds={latLngBnd} />
+        }
 
         {recent.map(({ username, location, timestamp, ageMs }, idx) => {
           const position: [number, number] = [
@@ -191,11 +198,11 @@ export const MapWidget: React.FC<{
 
           // Map username -> color (from computed colorMap)
           const uname = username.toLowerCase();
-          const color = colorMap[uname]
+          const color = colorMap[uname];
 
-          // Compute opacity: transparency increases from 0 to 0.7 over 15 minutes
-          // transparency = (age / 15min) * 0.7, so opacity = 1 - transparency
-          const transparency = Math.min(1, ageMs / FIFTEEN_MIN_MS) * 0.7;
+          // Compute opacity: transparency increases from 0 to 0.3 over 15 minutes
+          // transparency = (age / 15min) * 0.3, so opacity = 1 - transparency
+          const transparency = Math.min(1, ageMs / FIFTEEN_MIN_MS) * 0.3;
           const opacity = Math.max(0.3, 1 - transparency); // clamp to [0.3, 1]
 
           return (

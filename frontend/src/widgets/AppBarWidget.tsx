@@ -79,8 +79,10 @@ export const AppBarWidget = () => {
   );
 
   return (
-    <AppBar color="primary" style={{ zIndex: 1000, position: "sticky"}}>
-      <Toolbar style={{height: 100, alignItems: 'flex-end', paddingBottom: 5 }}>
+    <AppBar color="primary" style={{ zIndex: 1000, position: "sticky" }}>
+      <Toolbar
+        style={{ height: 100, alignItems: "flex-end", paddingBottom: 5 }}
+      >
         <LinkWidget to={"/"}>
           <img src={logo} alt="Logo" style={{ height: 40, marginRight: 16 }} />
         </LinkWidget>
@@ -93,29 +95,15 @@ export const AppBarWidget = () => {
         }
         <Box sx={{ flexGrow: 1 }} />
 
-        <PopupState variant="popover" popupId="qrcode-popover">
-          {(popupState) => (
-            <>
-              <IconButton {...bindTrigger(popupState)} aria-label="qrcode">
-                <QrCodeIcon />
-              </IconButton>
-              <Popover
-                {...bindPopover(popupState)}
-                onClick={() => popupState.close()}
-              >
-                <QRCodeSVG
-                  value={window.location.href}
-                  fgColor={theme.palette.primary.main}
-                  style={{ display: "block" }}
-                />
-              </Popover>
-            </>
-          )}
-        </PopupState>
-  {isAuthenticated ? loggedinBarActions : loginButton}
-        {/* Location sharing toggle as a single button */}
+        {isAuthenticated ? loggedinBarActions : loginButton}
         <Box sx={{ display: "flex", alignItems: "center", ml: 1, mr: 1 }}>
-          <Tooltip title={locationEnabled ? "Stop sharing location" : "Share location with server"}>
+          <Tooltip
+            title={
+              locationEnabled
+                ? "Stop sharing location"
+                : "Share location with server"
+            }
+          >
             <IconButton
               onClick={() => setLocationEnabled(!locationEnabled)}
               color={locationEnabled ? "inherit" : "default"}
@@ -123,14 +111,21 @@ export const AppBarWidget = () => {
               aria-label="toggle location sharing"
               sx={{ p: 0, width: 40, height: 40 }}
             >
-              {locationEnabled ? <LocationOnIcon fontSize="small" /> : <LocationOffIcon fontSize="small" />}
+              {locationEnabled ? (
+                <LocationOnIcon fontSize="small" />
+              ) : (
+                <LocationOffIcon fontSize="small" />
+              )}
             </IconButton>
           </Tooltip>
         </Box>
-
         {/* Single icon toggle for dark mode (sun/moon) */}
         <Box sx={{ display: "flex", alignItems: "center", ml: 1 }}>
-          <Tooltip title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+          <Tooltip
+            title={
+              mode === "dark" ? "Switch to light mode" : "Switch to dark mode"
+            }
+          >
             <IconButton
               onClick={() => toggleMode()}
               color="inherit"
