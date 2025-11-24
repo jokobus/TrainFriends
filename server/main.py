@@ -63,10 +63,6 @@ class Location(BaseModel):
     latitude: float
     longitude: float
 
-
-# LocationWithFriends removed: /location will determine friends from DB
-
-
 def get_conn():
     # Ensure DB is initialized for the chosen DB_PATH before opening connections
     global db_initialized
@@ -172,6 +168,18 @@ async def get_current_username(request: Request) -> str:
         )
     return username
 
+async def delete_old_location_entries(max_time:int=15, interval:int=60):
+    """Delete old location entries. Executed all 60 seconds and delete entries older than 15 minutes. 
+
+    :param max_time: Time in minutes. All older entries are deleted. 
+    """
+    while True: 
+        conn = get_conn()
+        cutoff = (datetime.now(UTC) - timedelta(minutes=max_time)).isoformat()
+        conn.execute("DELETE FROM locations WHERE ts < ?", (cutoff,))
+        conn.commit()
+        conn.close()
+        await asyncio.sleep(interval)
 
 @app.post("/signup", response_model=GenericResponse)
 async def signup(req: SignupRequest):
@@ -261,7 +269,7 @@ async def send_friend_request(
     # insert friends
     cur.execute(
         "INSERT INTO friend_requests(id, from_user, to_user, status, created) VALUES (?, ?, ?, 'pending', ?)",
-        (rid, username, target, datetime.utcnow().isoformat()),
+        (rid, username, target, datetime.now(UTC).isoformat()),
     )
     conn.commit()
     conn.close()
@@ -458,9 +466,8 @@ async def location(loc: Location, username: str = Depends(get_current_username))
         "INSERT INTO locations(username, latitude, longitude, ts) VALUES (?, ?, ?, ?)",
         (username, loc.latitude, loc.longitude, ts),
     )
-    # cleanup older than 15 minutes
-    cutoff = (datetime.utcnow() - timedelta(minutes=15)).isoformat()
-    conn.execute("DELETE FROM locations WHERE ts < ?", (cutoff,))
+
+    # delete_old_location_entries()
 
     # determine friends from the friends table for the current user
     cur_f = conn.execute(
@@ -500,7 +507,7 @@ async def events(request: Request, username: str = Depends(get_current_username)
     async def event_generator():
         try:
             yield "event: detail\ndata: {}\n\n".format(
-                json.dumps({"detail": "connected", "ts": datetime.utcnow().isoformat()})
+                json.dumps({"detail": "connected", "ts": datetime.now(UTC).isoformat()})
             )
             while True:
                 if await request.is_disconnected():
@@ -543,5 +550,9 @@ if __name__ == "__main__":
 
     # Ensure DB is initialized for the chosen path
     init_db()
+    #asyncio.create_task(delete_old_location_entries())
+
+    # Minimal startup scheduling
+    app.add_event_handler("startup", lambda: asyncio.create_task(delete_old_location_entries()))
 
     uvicorn.run(app, host=args.host, port=args.port)
