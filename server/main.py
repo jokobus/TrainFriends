@@ -286,7 +286,7 @@ async def accept_friend_request(
         conn.close()
         raise HTTPException(status_code=400, detail=f"Request already {fr['status']}")
     cur.execute(
-        "UPDATE friend_requests SET status = 'accepted' WHERE id = ?", (request_id,)
+        "DELETE FROM friend_requests WHERE id = ?", (request_id,)
     )
     # add both directions
     from_user = fr["from_user"]
