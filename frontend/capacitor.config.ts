@@ -8,6 +8,13 @@ const config: CapacitorConfig = {
     CapacitorHttp: {
       enabled: true,
     },
+    LocalNotifications: {},
+    CapacitorCookies: {
+      enabled: true,
+    },
+  },
+  android: {
+    useLegacyBridge: true,
   },
 };
 

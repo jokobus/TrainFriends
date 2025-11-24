@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import { AxiosPromise } from "axios";
 import { Typography } from "@mui/material";
-import { Api } from "./api";
+import { Api, Location } from "./api";
 import { useDeepCompareEffectNoCheck } from "use-deep-compare-effect";
 
 export type Nullable<T> = T | null | undefined;
@@ -70,7 +70,7 @@ export function useLocalStorage<T>(
 
 // https://stackoverflow.com/a/66494926/13534562
 export const stringToColor = (str: string): string => {
-  let stringUniqueHash = [...str].reduce((acc, char) => {
+  const stringUniqueHash = [...str].reduce((acc, char) => {
     return char.charCodeAt(0) + ((acc << 5) - acc);
   }, 0);
   return `hsl(${stringUniqueHash % 360}, 95%, 35%)`;
@@ -115,31 +115,33 @@ export function arraySwap<T>(arr: T[], i: number, j: number) {
 export const handleApiErr = (error: any): string => {
   console.log(error);
 
-  var errMsg;
+  let errMsg;
 
   if (error.response) {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
-    console.log(error.response.data.detail);
-    console.log(error.response.status);
-    console.log(error.response.headers);
-    errMsg = "Error:" + error.response.data.detail;
+    console.error(error.response.data.detail);
+    console.error(error.response.status);
+    console.error(error.response.headers);
+    errMsg = String(error.response.data?.detail ?? "");
   } else if (error.request) {
     // The request was made but no response was received
     // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
     // http.ClientRequest in node.js
-    console.log(error.request);
-    errMsg = "Error: No response received: " + error.request;
+    console.error(error.request);
+    errMsg =
+      "No response received" +
+      (error.request ? ": " + String(error.request) : "");
   } else if (error.message) {
     // Something happened in setting up the request that triggered an Error
-    console.log(error.message);
-    errMsg = "Error: " + error.message;
+    console.error(error.message);
+    errMsg = String(error.message ?? "");
   } else {
-    console.log("Error: Unkown Error");
-    return "Error: Unkown Error";
+    console.error("Unkown Error");
+    return "Unknown Error";
   }
 
-  console.log(error.config);
+  console.error(error.config);
   return errMsg;
 };
 
@@ -253,7 +255,7 @@ export const useApi: IntersectionToRenderedIntersectionApi<ApiMethod> = <
       );
       setLoading(false);
     },
-    [method, ...Object.values(fnExtraParams ?? {})], // eslint-disable-line react-hooks/exhaustive-deps
+    [method, ...Object.values(fnExtraParams ?? {})],
   );
 
   const res: ApiFnRet<T> = [error, sendReq, loading];
@@ -325,7 +327,7 @@ export const useApiState: IntersectionToRenderedIntersectionApiState<
 ) => {
   type Data = ApiReturnType<T>;
   const [data, setData] = useState<Data | null>(null);
-  // @ts-ignore
+  // @ts-expect-error Typsystem of Typescript not smart enough here
   const [error, cb, loading] = useApi<T>(method);
 
   const onSuccess = extraParams?.onSuccess;
@@ -363,7 +365,7 @@ type Endpoints = {
 
 // helper to have autocompletion for the strings of all endpoints, should be used like this:
 /* const [friends, setFriends, loadingFr, errorFr] = useApiState(DApi.apiFriendsGet); */
-// @ts-ignore
+// @ts-expect-error Typsystem of Typescript not smart enough here
 export const DApi: Endpoints = Object.fromEntries(
   Object.keys(Api).map((endpoint) => [endpoint, endpoint]),
 );
@@ -382,3 +384,27 @@ export function useTitle(arg: string | (() => string)) {
     };
   }, [arg]);
 }
+
+export const randomInt32 = (): number => {
+  return Math.floor(Math.random() * 0x100000000) - 0x80000000; // shift range
+};
+
+// see https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
+export const getDistanceFromLatLonInKm = (x: Location, y: Location): number => {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(y.latitude - x.latitude); // deg2rad below
+  const dLon = deg2rad(y.longitude - x.longitude);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(x.latitude)) *
+      Math.cos(deg2rad(y.latitude)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+};
+
+export const deg2rad = (deg: number): number => {
+  return deg * (Math.PI / 180);
+};

@@ -21,7 +21,6 @@ export const Api = (() => {
     basePath,
   });
 
-  return {
-    ...auto.DefaultApiFactory(configuration, basePath),
-  };
-})();
+  return auto.DefaultApiFactory(configuration, basePath); 
+  
+  })();

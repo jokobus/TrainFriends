@@ -1,16 +1,18 @@
 import React from "react";
+import "leaflet/dist/leaflet.css";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
-import CssBaseline from "@mui/material/CssBaseline/CssBaseline";
 import Frame from "./routes/Frame";
 import ErrorPage from "./error-page";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { Signup } from "./routes/Signup";
 import { Login } from "./routes/Login";
-import HomeRoute from "./routes/HomeRoute";
+import { HomeRoute } from "./routes/HomeRoute";
 import { FriendsRequestWidget } from "./widgets/FriendsRequestWidget";
 import { FriendsWidget } from "./widgets/FriendsWidget";
 import { AuthProvider } from "./providers/auth";
+import { AppThemeProvider } from "./providers/theme";
+import { LocationProvider } from "./providers/location";
 
 // // Rickroll banner
 const banner = `
@@ -76,10 +78,11 @@ const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
 );
 root.render(
-  <React.StrictMode>
-    <CssBaseline enableColorScheme />
+  <AppThemeProvider>
     <AuthProvider>
-      <RouterProvider router={router} />
+      <LocationProvider>
+        <RouterProvider router={router} />
+      </LocationProvider>
     </AuthProvider>
-  </React.StrictMode>,
+  </AppThemeProvider>,
 );

@@ -104,26 +104,51 @@ export interface GenericSuccess {
      * @type {string}
      * @memberof GenericSuccess
      */
-    'message'?: string;
+    'detail'?: string;
 }
 /**
  * 
  * @export
- * @interface LocationPush
+ * @interface Location
  */
-export interface LocationPush {
+export interface Location {
     /**
      * 
      * @type {number}
-     * @memberof LocationPush
+     * @memberof Location
      */
     'latitude': number;
     /**
      * 
      * @type {number}
-     * @memberof LocationPush
+     * @memberof Location
      */
     'longitude': number;
+}
+/**
+ * 
+ * @export
+ * @interface LocationUser
+ */
+export interface LocationUser {
+    /**
+     * 
+     * @type {string}
+     * @memberof LocationUser
+     */
+    'username': string;
+    /**
+     * 
+     * @type {Location}
+     * @memberof LocationUser
+     */
+    'location': Location;
+    /**
+     * 
+     * @type {string}
+     * @memberof LocationUser
+     */
+    'ts': string;
 }
 /**
  * 
@@ -161,7 +186,7 @@ export interface LoginResponse {
      * @type {string}
      * @memberof LoginResponse
      */
-    'message'?: string;
+    'detail'?: string;
 }
 /**
  * 
@@ -199,7 +224,7 @@ export interface SignupResponse {
      * @type {string}
      * @memberof SignupResponse
      */
-    'message'?: string;
+    'detail'?: string;
 }
 
 /**
@@ -420,6 +445,42 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary Delete a friend connection
+         * @param {string} friendUsername Username of the friend to remove
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        friendsFriendUsernameDelete: async (friendUsername: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'friendUsername' is not null or undefined
+            assertParamExists('friendsFriendUsernameDelete', 'friendUsername', friendUsername)
+            const localVarPath = `/friends/{friend_username}`
+                .replace(`{${"friend_username"}}`, encodeURIComponent(String(friendUsername)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication cookieAuth required
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary List usernames of confirmed friends
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -452,14 +513,14 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
-         * @summary Push current location
-         * @param {LocationPush} locationPush 
+         * @summary Report current position and retrieve recent friend locations
+         * @param {Location} location 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        locationPost: async (locationPush: LocationPush, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'locationPush' is not null or undefined
-            assertParamExists('locationPost', 'locationPush', locationPush)
+        locationPost: async (location: Location, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'location' is not null or undefined
+            assertParamExists('locationPost', 'location', location)
             const localVarPath = `/location`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -481,7 +542,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(locationPush, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(location, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -680,6 +741,19 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Delete a friend connection
+         * @param {string} friendUsername Username of the friend to remove
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async friendsFriendUsernameDelete(friendUsername: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GenericSuccess>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.friendsFriendUsernameDelete(friendUsername, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['DefaultApi.friendsFriendUsernameDelete']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary List usernames of confirmed friends
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -692,13 +766,13 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
-         * @summary Push current location
-         * @param {LocationPush} locationPush 
+         * @summary Report current position and retrieve recent friend locations
+         * @param {Location} location 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async locationPost(locationPush: LocationPush, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GenericSuccess>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.locationPost(locationPush, options);
+        async locationPost(location: Location, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<LocationUser>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.locationPost(location, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['DefaultApi.locationPost']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -811,6 +885,16 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @summary Delete a friend connection
+         * @param {DefaultApiFriendsFriendUsernameDeleteRequest} requestParameters Request parameters.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        friendsFriendUsernameDelete(requestParameters: DefaultApiFriendsFriendUsernameDeleteRequest, options?: RawAxiosRequestConfig): AxiosPromise<GenericSuccess> {
+            return localVarFp.friendsFriendUsernameDelete(requestParameters.friendUsername, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary List usernames of confirmed friends
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -820,13 +904,13 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
-         * @summary Push current location
+         * @summary Report current position and retrieve recent friend locations
          * @param {DefaultApiLocationPostRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        locationPost(requestParameters: DefaultApiLocationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<GenericSuccess> {
-            return localVarFp.locationPost(requestParameters.locationPush, options).then((request) => request(axios, basePath));
+        locationPost(requestParameters: DefaultApiLocationPostRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<LocationUser>> {
+            return localVarFp.locationPost(requestParameters.location, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -917,6 +1001,20 @@ export interface DefaultApiFriendRequestIdRejectPostRequest {
 }
 
 /**
+ * Request parameters for friendsFriendUsernameDelete operation in DefaultApi.
+ * @export
+ * @interface DefaultApiFriendsFriendUsernameDeleteRequest
+ */
+export interface DefaultApiFriendsFriendUsernameDeleteRequest {
+    /**
+     * Username of the friend to remove
+     * @type {string}
+     * @memberof DefaultApiFriendsFriendUsernameDelete
+     */
+    readonly friendUsername: string
+}
+
+/**
  * Request parameters for locationPost operation in DefaultApi.
  * @export
  * @interface DefaultApiLocationPostRequest
@@ -924,10 +1022,10 @@ export interface DefaultApiFriendRequestIdRejectPostRequest {
 export interface DefaultApiLocationPostRequest {
     /**
      * 
-     * @type {LocationPush}
+     * @type {Location}
      * @memberof DefaultApiLocationPost
      */
-    readonly locationPush: LocationPush
+    readonly location: Location
 }
 
 /**
@@ -1037,6 +1135,18 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
+     * @summary Delete a friend connection
+     * @param {DefaultApiFriendsFriendUsernameDeleteRequest} requestParameters Request parameters.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public friendsFriendUsernameDelete(requestParameters: DefaultApiFriendsFriendUsernameDeleteRequest, options?: RawAxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).friendsFriendUsernameDelete(requestParameters.friendUsername, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary List usernames of confirmed friends
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -1048,14 +1158,14 @@ export class DefaultApi extends BaseAPI {
 
     /**
      * 
-     * @summary Push current location
+     * @summary Report current position and retrieve recent friend locations
      * @param {DefaultApiLocationPostRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
     public locationPost(requestParameters: DefaultApiLocationPostRequest, options?: RawAxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).locationPost(requestParameters.locationPush, options).then((request) => request(this.axios, this.basePath));
+        return DefaultApiFp(this.configuration).locationPost(requestParameters.location, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

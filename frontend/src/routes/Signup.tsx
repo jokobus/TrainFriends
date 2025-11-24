@@ -1,17 +1,20 @@
-import React, { useState } from "react";
+import React, { ReactElement, useState } from "react";
 import { Button, Stack, TextField, Tooltip, Typography } from "@mui/material";
 import { Api } from "../api";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { handleApiErr, useTitle } from "../utils";
 import { userNameMaxLength } from "../consts";
 import { LinkWidget } from "../widgets/LinkWidget";
+import { Link } from "react-router-dom";
+import { StandardCard } from "../widgets/StandardCard";
+import { PasswordInput } from "../widgets/PasswordInput";
 
 interface SignupData {
   name: string;
   password: string;
 }
 
-export const Signup = (): JSX.Element => {
+export const Signup = (): ReactElement => {
   useTitle(`Signup`);
   const [signupData, setSignupData] = useState<SignupData>({
     name: "",
@@ -25,6 +28,7 @@ export const Signup = (): JSX.Element => {
   const [succeeded, setSucceeded] = useState<boolean>(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const handleChangeSD = (e: React.ChangeEvent<HTMLInputElement>) => {
     // limit size of username to 20 characters
@@ -62,9 +66,13 @@ export const Signup = (): JSX.Element => {
           password: signupData.password,
         },
       });
-      // TODO: use response
+      // on success, redirect to login and show a small info message there
       setError("");
       setSucceeded(true);
+      navigate("/login", {
+        state: { info: "Signup successful, please log in" },
+        replace: true,
+      });
     } catch (e: any) {
       setError(handleApiErr(e));
     } finally {
@@ -73,45 +81,63 @@ export const Signup = (): JSX.Element => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Stack spacing={2} alignItems="center">
-        <h2>Sign Up</h2>
-        <TextField
-          type="text"
-          name="name"
-          variant="standard"
-          value={signupData.name}
-          onChange={handleChangeSD}
-          placeholder="Name"
-          required
-        />
-        <TextField
-          type="password"
-          name="password"
-          variant="standard"
-          value={signupData.password}
-          onChange={handleChangeSD}
-          placeholder="Password"
-          required
-        />
-        <TextField
-          type="password"
-          name="confirmPassword"
-          variant="standard"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder="Confirm password"
-          required
-        />
-        <Button type="submit" variant="contained" disabled={loading}>
-          Sign up
-        </Button>
-        {
-          succeeded && "Logging in" // TODO: reroute to login
-        }
-        {error && <p style={{ color: "red" }}>Error: {error}</p>}
-        {info && <p style={{ color: "green" }}>{info}</p>}
-      </Stack>
-    </form>
+    <StandardCard>
+      <form onSubmit={handleSubmit}>
+        <Stack spacing={2} alignItems="center">
+          <h2>Sign Up</h2>
+          <TextField
+            sx={{
+              width: 320,
+              maxWidth: "100%",
+              "@media (max-width:480px)": { width: "90vw", maxWidth: 320 },
+            }}
+            type="text"
+            name="name"
+            variant="standard"
+            value={signupData.name}
+            onChange={handleChangeSD}
+            placeholder="Username"
+            required
+          />
+          <TextField
+            sx={{
+              width: 320,
+              maxWidth: "100%",
+              "@media (max-width:480px)": { width: "90vw", maxWidth: 320 },
+            }}
+            type="password"
+            name="password"
+            variant="standard"
+            value={signupData.password}
+            onChange={handleChangeSD}
+            placeholder="Password"
+            required
+          />
+          <TextField
+            sx={{
+              width: 320,
+              maxWidth: "100%",
+              "@media (max-width:480px)": { width: "90vw", maxWidth: 320 },
+            }}
+            type="password"
+            name="confirmPassword"
+            variant="standard"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm password"
+            required
+          />
+          <Button type="submit" variant="contained" disabled={loading}>
+            Sign up
+          </Button>
+          {succeeded && "Logging in"}
+          {error && <p style={{ color: "red" }}>Error: {error}</p>}
+          {info && <p style={{ color: "green" }}>{info}</p>}
+          <Button component={Link} to="/login">
+            Login instead
+          </Button>
+        </Stack>
+      </form>
+    </StandardCard>
   );
 };

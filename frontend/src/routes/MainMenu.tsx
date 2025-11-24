@@ -13,7 +13,18 @@ export default function MainMenu() {
   const { userName } = useAuthedState();
 
   return (
-    <BottomNavigation value={location.pathname}>
+    <BottomNavigation
+      value={location.pathname}
+      showLabels
+      sx={{
+        width: "100%",
+        position: "sticky",
+        bottom: 0,
+        paddingBottom: 1,
+        borderTopLeftRadius: 8,
+        borderTopRightRadius: 8,
+      }}
+    >
       <BottomNavigationAction
         icon={<HomeIcon />}
         label="Home"

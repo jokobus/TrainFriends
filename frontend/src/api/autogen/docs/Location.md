@@ -1,21 +1,21 @@
-# SignupResponse
+# Location
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**success** | **boolean** |  | [optional] [default to undefined]
-**detail** | **string** |  | [optional] [default to undefined]
+**latitude** | **number** |  | [default to undefined]
+**longitude** | **number** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { SignupResponse } from './api';
+import { Location } from './api';
 
-const instance: SignupResponse = {
-    success,
-    detail,
+const instance: Location = {
+    latitude,
+    longitude,
 };
 ```
 

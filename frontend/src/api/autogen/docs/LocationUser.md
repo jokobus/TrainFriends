@@ -1,21 +1,23 @@
-# SignupResponse
+# LocationUser
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**success** | **boolean** |  | [optional] [default to undefined]
-**detail** | **string** |  | [optional] [default to undefined]
+**username** | **string** |  | [default to undefined]
+**location** | [**Location**](Location.md) |  | [default to undefined]
+**ts** | **string** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { SignupResponse } from './api';
+import { LocationUser } from './api';
 
-const instance: SignupResponse = {
-    success,
-    detail,
+const instance: LocationUser = {
+    username,
+    location,
+    ts,
 };
 ```
 

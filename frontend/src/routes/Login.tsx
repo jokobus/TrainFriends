@@ -5,6 +5,7 @@ import { useAuth } from "../providers/auth";
 import { Link } from "react-router-dom";
 import { PasswordInput } from "../widgets/PasswordInput";
 import { useTitle } from "../utils";
+import { StandardCard } from "../widgets/StandardCard";
 
 export const Login = () => {
   useTitle("Login");
@@ -15,6 +16,12 @@ export const Login = () => {
   const navigate = useNavigate();
   const { login, authState } = useAuth();
   const { state } = useLocation();
+
+  useEffect(() => {
+    if (state && (state as any).info) {
+      setSuccess((state as any).info as string);
+    }
+  }, [state]);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -35,11 +42,16 @@ export const Login = () => {
   }, [authState.isAuthenticated, state?.path, navigate]);
 
   return (
-    <Stack spacing={2} alignItems="center">
+    <StandardCard>
       <form onSubmit={handleLogin}>
         <Stack spacing={2} alignItems="center">
           <h2>Login</h2>
           <TextField
+            sx={{
+              width: 320,
+              maxWidth: "100%",
+              "@media (max-width:480px)": { width: "90vw", maxWidth: 320 },
+            }}
             required
             type="text"
             value={username}
@@ -48,6 +60,11 @@ export const Login = () => {
             placeholder="Username"
           />
           <PasswordInput
+            sx={{
+              width: 320,
+              maxWidth: "100%",
+              "@media (max-width:480px)": { width: "90vw", maxWidth: 320 },
+            }}
             required
             value={password}
             variant="standard"
@@ -59,11 +76,11 @@ export const Login = () => {
           <Button variant="contained" type="submit">
             Login
           </Button>
+          <Button component={Link} to="/signup">
+            Sign up instead
+          </Button>
         </Stack>
       </form>
-      <Button component={Link} to="/signup">
-        Sign up instead
-      </Button>
-    </Stack>
+    </StandardCard>
   );
 };

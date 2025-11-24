@@ -29,6 +29,7 @@
                 ps: with ps; [
                   fastapi
                   uvicorn
+                  firebase-admin
                 ]
               ))
             ];

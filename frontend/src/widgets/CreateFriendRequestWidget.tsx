@@ -28,8 +28,7 @@ export const CreateFriendRequestWidget = ({
   return (
     <form onSubmit={handleSubmit}>
       <Stack spacing={2} alignItems="center">
-        <h2>Create Send Request</h2>
-        <TextField
+        <TextField  sx={{ width: 320, maxWidth: "100%", "@media (max-width:480px)": {width: "90vw", maxWidth: 320 }}} 
           required
           type="text"
           value={username}
