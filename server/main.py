@@ -236,7 +236,9 @@ async def send_friend_request(
         raise HTTPException(status_code=400, detail="Cannot friend yourself")
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT 1 FROM users WHERE username = ?", (target,))
+    cur.execute(
+        "SELECT 1 FROM users WHERE username = ?", (target,)
+    )
     if not cur.fetchone():
         conn.close()
         raise HTTPException(status_code=404, detail="User not found")
@@ -248,6 +250,15 @@ async def send_friend_request(
         conn.close()
         raise HTTPException(status_code=400, detail="Already friends")
     rid = uuid.uuid4().hex
+    # check for pending request
+    cur.execute(
+        "SELECT 1 FROM friend_requests WHERE (from_user = ?1 and to_user = ?2) OR (from_user = ?2 and to_user = ?1)", (username, target)
+    )
+    if cur.fetchone():
+        conn.close()
+        raise HTTPException(status_code=400, detail="Request already pending. ")
+
+    # insert friends
     cur.execute(
         "INSERT INTO friend_requests(id, from_user, to_user, status, created) VALUES (?, ?, ?, 'pending', ?)",
         (rid, username, target, datetime.utcnow().isoformat()),
