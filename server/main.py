@@ -34,7 +34,7 @@ class Config:
 config = None
 
 class SignupRequest(BaseModel):
-    username: str
+    userid: str
     password: str
 
 
@@ -45,12 +45,21 @@ class GenericResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    username: str
+    userid: str
+    password: str
+
+
+class LogoutRequest(BaseModel): 
+    session_id: str
+
+
+class DeleteUserRequest(BaseModel): 
+    userid: str
     password: str
 
 
 class FriendRequestBody(BaseModel):
-    friendUsername: str
+    friendUserID: str
 
 
 class Location(BaseModel):
@@ -127,7 +136,7 @@ async def init_db():
     cur.execute(
         """
 		CREATE TABLE IF NOT EXISTS users (
-			username TEXT PRIMARY KEY,
+			userid TEXT PRIMARY KEY,
 			password TEXT NOT NULL
 		)
 		"""
@@ -137,7 +146,7 @@ async def init_db():
     cur.execute(
         """
 		CREATE TABLE IF NOT EXISTS locations (
-			username TEXT NOT NULL,
+			userid TEXT NOT NULL,
 			latitude REAL NOT NULL,
 			longitude REAL NOT NULL,
 			ts TEXT NOT NULL
@@ -149,7 +158,7 @@ async def init_db():
         """
         CREATE TABLE IF NOT EXISTS sessions (
             session_id TEXT PRIMARY KEY,
-            username TEXT NOT NULL,
+            userid TEXT NOT NULL,
             ts TEXT NOT NULL
         )
         """
@@ -159,8 +168,8 @@ async def init_db():
         """
 		CREATE TABLE IF NOT EXISTS friend_requests (
 			id TEXT PRIMARY KEY,
-			from_user TEXT NOT NULL,
-			to_user TEXT NOT NULL,
+			from_userid TEXT NOT NULL,
+			to_userid TEXT NOT NULL,
 			status TEXT NOT NULL,
 			created TEXT NOT NULL
 		)
@@ -169,9 +178,9 @@ async def init_db():
     cur.execute(
         """
 		CREATE TABLE IF NOT EXISTS friends (
-			user TEXT NOT NULL,
-			friend TEXT NOT NULL,
-			PRIMARY KEY (user, friend)
+			userid1 TEXT NOT NULL,
+			userid2 TEXT NOT NULL,
+			PRIMARY KEY (userid1, userid2)
 		)
 		"""
     )
@@ -181,36 +190,36 @@ async def init_db():
     db_initialized = True
 
 
-def create_session(username: str) -> str:
+def create_session(userid: str) -> str:
     ts = datetime.now(UTC).isoformat()
     sid = uuid.uuid4().hex
     conn = get_conn()
     conn.execute(
-        "INSERT INTO sessions(session_id, username, ts) VALUES (?, ?, ?)", (sid, username, ts)
+        "INSERT INTO sessions(session_id, userid, ts) VALUES (?, ?, ?)", (sid, userid, ts)
     )
     conn.commit()
     conn.close()
     return sid
 
 
-def get_username_from_cookie(request: Request) -> Optional[str]:
+def get_userid_from_cookie(request: Request) -> Optional[str]:
     sid = request.cookies.get("session_id")
     if not sid:
         return None
     conn = get_conn()
-    cur = conn.execute("SELECT username FROM sessions WHERE session_id = ?", (sid,))
+    cur = conn.execute("SELECT userid FROM sessions WHERE session_id = ?", (sid,))
     row = cur.fetchone()
     conn.close()
-    return row["username"] if row else None
+    return row["userid"] if row else None
 
 
-async def get_current_username(request: Request) -> str:
-    username = get_username_from_cookie(request)
-    if not username:
+async def get_current_userid(request: Request) -> str:
+    userid = get_userid_from_cookie(request)
+    if not userid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized"
         )
-    return username
+    return userid
 
 
 async def delete_old_location_entries(max_time:int=15, interval:int=60):
@@ -267,13 +276,13 @@ def _delete_old_session_entries(cutoff):
 async def signup(req: SignupRequest):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT 1 FROM users WHERE username = ?", (req.username,))
+    cur.execute("SELECT 1 FROM users WHERE userid = ?", (req.userid,))
     if cur.fetchone():
         conn.close()
-        raise HTTPException(status_code=400, detail="Username already exists")
+        raise HTTPException(status_code=400, detail="UserID already exists")
     cur.execute(
-        "INSERT INTO users(username, password) VALUES (?, ?)",
-        (req.username, req.password),
+        "INSERT INTO users(userid, password) VALUES (?, ?)",
+        (req.userid, req.password),
     )
     conn.commit()
     conn.close()
@@ -281,29 +290,22 @@ async def signup(req: SignupRequest):
 
 
 @app.post("/login")
-async def login(req: LoginRequest, response: Response):
+async def login(request: LoginRequest, response: Response):
     conn = get_conn()
-    cur = conn.execute("SELECT password FROM users WHERE username = ?", (req.username,))
+    cur = conn.execute("SELECT password FROM users WHERE userid = ?", (request.userid,))
     row = cur.fetchone()
     conn.close()
-    if not row or row["password"] != req.password:
-        #raise HTTPException(
-        #    status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
-        #)
-        # return a JSON error response instead of raising an exception object
-        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={
-            "success": False,
-            "detail": "Invalid credentials"
-        })
-    sid = create_session(req.username)
+    if not row or row["password"] != request.password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )
+    sid = create_session(request.userid)
     response.set_cookie(key="session_id", value=sid, httponly=True, path="/")
     return {"success": True, "detail": "Logged in."}
 
 
 @app.post("/logout")
-async def logout(
-    request: Request, response: Response, username: str = Depends(get_current_username)
-):
+async def logout(request: LogoutRequest, response: Response):
     """Logout current user: remove session from DB and clear cookie."""
     sid = request.cookies.get("session_id")
     if sid:
@@ -316,30 +318,55 @@ async def logout(
     return {"success": True, "detail": "Logged out."}
 
 
+@app.post("/delete_user")
+async def close_account(request: DeleteUserRequest, response: Response): 
+    """Delete current user: remove session from DB, clear cookie, remove from locations, remove from friend-requests, remove from friends, remove from users table"""
+    conn = get_conn()
+    conn.execute("DELETE FROM sessions WHERE userid = ?", (request.userid,))
+    conn.execute("DELETE FROM locations WHERE userid = ?", (request.userid,))
+    conn.execute(
+        "DELETE FROM friend_requests WHERE (from_userid = ?1 OR to_userid = ?1)",
+        (request.userid),
+    )
+    conn.execute(
+        "DELETE FROM friends WHERE (userid1 = ?1 OR userid2 = ?1)",
+        (request.userid),
+    )
+    
+    conn.commit()
+    conn.close()
+    
+    # clear cookie on client
+    # sid = request.cookies.get("session_id")
+    #response.delete_cookie("session_id", path="/")
+    return {"success": True, "detail": f"Deleted account {request.userid} successfully. "}
+    
+
+
 @app.get("/authCheck")
-async def auth_check(username: str = Depends(get_current_username)):
-    """Return authenticated username if the session cookie is valid."""
-    return {"username": username}
+async def auth_check(userid: str = Depends(get_current_userid)):
+    """Return authenticated userid if the session cookie is valid."""
+    return {"userid": userid}
 
 
 @app.post("/friend-request/create", response_model=GenericResponse)
 async def send_friend_request(
-    body: FriendRequestBody, username: str = Depends(get_current_username)
+    body: FriendRequestBody, userid: str = Depends(get_current_userid)
 ):
-    target = body.friendUsername
-    if target == username:
+    target = body.friendUserID
+    if target == userid:
         raise HTTPException(status_code=400, detail="Cannot friend yourself")
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "SELECT 1 FROM users WHERE username = ?", (target,)
+        "SELECT 1 FROM users WHERE userid = ?", (target,)
     )
     if not cur.fetchone():
         conn.close()
         raise HTTPException(status_code=404, detail="User not found")
     # check existing friendship
     cur.execute(
-        "SELECT 1 FROM friends WHERE user = ? AND friend = ?", (username, target)
+        "SELECT 1 FROM friends WHERE userid1 = ? AND userid2 = ?", (userid, target)
     )
     if cur.fetchone():
         conn.close()
@@ -347,7 +374,8 @@ async def send_friend_request(
     rid = uuid.uuid4().hex
     # check for pending request
     cur.execute(
-        "SELECT 1 FROM friend_requests WHERE (from_user = ?1 and to_user = ?2) OR (from_user = ?2 and to_user = ?1)", (username, target)
+        "SELECT 1 FROM friend_requests WHERE (from_userid = ?1 AND to_userid = ?2) OR (from_userid = ?2 AND to_userid = ?1)",
+        (userid, target)
     )
     if cur.fetchone():
         conn.close()
@@ -355,8 +383,8 @@ async def send_friend_request(
 
     # insert friends
     cur.execute(
-        "INSERT INTO friend_requests(id, from_user, to_user, status, created) VALUES (?, ?, ?, 'pending', ?)",
-        (rid, username, target, datetime.now(UTC).isoformat()),
+        "INSERT INTO friend_requests(id, from_userid, to_userid, status, created) VALUES (?, ?, ?, 'pending', ?)",
+        (rid, userid, target, datetime.now(UTC).isoformat()),
     )
     conn.commit()
     conn.close()
@@ -365,7 +393,7 @@ async def send_friend_request(
 
 @app.post("/friend-request/{request_id}/accept", response_model=GenericResponse)
 async def accept_friend_request(
-    request_id: str, username: str = Depends(get_current_username)
+    request_id: str, userid: str = Depends(get_current_userid)
 ):
     conn = get_conn()
     cur = conn.cursor()
@@ -374,7 +402,7 @@ async def accept_friend_request(
     if not fr:
         conn.close()
         raise HTTPException(status_code=404, detail="Request not found")
-    if fr["to_user"] != username:
+    if fr["to_userid"] != userid:
         conn.close()
         raise HTTPException(status_code=403, detail="Not allowed")
     if fr["status"] != "pending":
@@ -384,14 +412,14 @@ async def accept_friend_request(
         "DELETE FROM friend_requests WHERE id = ?", (request_id,)
     )
     # add both directions
-    from_user = fr["from_user"]
+    from_user = fr["from_userid"]
     cur.execute(
-        "INSERT OR IGNORE INTO friends(user, friend) VALUES (?, ?)",
-        (username, from_user),
+        "INSERT OR IGNORE INTO friends(userid1, userid2) VALUES (?, ?)",
+        (userid, from_user),
     )
     cur.execute(
-        "INSERT OR IGNORE INTO friends(user, friend) VALUES (?, ?)",
-        (from_user, username),
+        "INSERT OR IGNORE INTO friends(userid1, userid2) VALUES (?, ?)",
+        (from_user, userid),
     )
     conn.commit()
     conn.close()
@@ -400,11 +428,11 @@ async def accept_friend_request(
 
 @app.post("/friend-request/{request_id}/reject", response_model=GenericResponse)
 async def reject_friend_request(
-    request_id: str, username: str = Depends(get_current_username)
+    request_id: str, userid: str = Depends(get_current_userid)
 ):
     """Recipient rejects a pending friend request — delete it
 
-    Simple semantics: only the to_user can reject, and only if status is 'pending'.
+    Simple semantics: only the to_userid can reject, and only if status is 'pending'.
     """
     conn = get_conn()
     cur = conn.cursor()
@@ -413,7 +441,7 @@ async def reject_friend_request(
     if not fr:
         conn.close()
         raise HTTPException(status_code=404, detail="Request not found")
-    if fr["to_user"] != username:
+    if fr["to_userid"] != userid:
         conn.close()
         raise HTTPException(status_code=403, detail="Not allowed")
     if fr["status"] != "pending":
@@ -427,7 +455,7 @@ async def reject_friend_request(
 
 @app.post("/friend-request/{request_id}/cancel", response_model=GenericResponse)
 async def cancel_friend_request(
-    request_id: str, username: str = Depends(get_current_username)
+    request_id: str, userid: str = Depends(get_current_userid)
 ):
     """Allow the sender to cancel their pending friend request - delete it.
 
@@ -440,7 +468,7 @@ async def cancel_friend_request(
     if not fr:
         conn.close()
         raise HTTPException(status_code=404, detail="Request not found")
-    if fr["from_user"] != username:
+    if fr["from_userid"] != userid:
         conn.close()
         raise HTTPException(status_code=403, detail="Not allowed")
     if fr["status"] != "pending":
@@ -453,7 +481,7 @@ async def cancel_friend_request(
 
 
 @app.get("/friend-requests")
-async def list_friend_requests(username: str = Depends(get_current_username)):
+async def list_friend_requests(userid: str = Depends(get_current_userid)):
     """Return pending friend-requests both to you and from you.
 
     Response shape matches swagger: { requestsToYou: [...], requestsFromYou: [...] }
@@ -462,13 +490,13 @@ async def list_friend_requests(username: str = Depends(get_current_username)):
     conn = get_conn()
     # incoming pending requests (to you)
     cur = conn.execute(
-        "SELECT id, from_user, status, created FROM friend_requests WHERE to_user = ? AND status = 'pending' ORDER BY created",
-        (username,),
+        "SELECT id, from_userid, status, created FROM friend_requests WHERE to_userid = ? AND status = 'pending' ORDER BY created",
+        (userid,),
     )
     requests_to_you = [
         {
             "id": r["id"],
-            "friendName": r["from_user"],
+            "friendName": r["from_userid"],
             "status": r["status"],
             "created": r["created"],
         }
@@ -477,13 +505,13 @@ async def list_friend_requests(username: str = Depends(get_current_username)):
 
     # outgoing pending requests (from you)
     cur2 = conn.execute(
-        "SELECT id, to_user, status, created FROM friend_requests WHERE from_user = ? AND status = 'pending' ORDER BY created",
-        (username,),
+        "SELECT id, to_userid, status, created FROM friend_requests WHERE from_userid = ? AND status = 'pending' ORDER BY created",
+        (userid,),
     )
     requests_from_you = [
         {
             "id": r["id"],
-            "friendName": r["to_user"],
+            "friendName": r["to_userid"],
             "status": r["status"],
             "created": r["created"],
         }
@@ -495,21 +523,21 @@ async def list_friend_requests(username: str = Depends(get_current_username)):
 
 
 @app.get("/friends")
-async def list_friends(username: str = Depends(get_current_username)):
+async def list_friends(userid: str = Depends(get_current_userid)):
     conn = get_conn()
     cur = conn.execute(
-        "SELECT friend FROM friends WHERE user = ? ORDER BY friend", (username,)
+        "SELECT userid2 FROM friends WHERE userid1 = ? ORDER BY userid2", (userid,)
     )
-    friends = [r["friend"] for r in cur.fetchall()]
+    friends = [r["userid2"] for r in cur.fetchall()]
     conn.close()
     return friends
 
 
-@app.delete("/friends/{friend_username}", response_model=GenericResponse)
+@app.delete("/friends/{friend_userid}", response_model=GenericResponse)
 async def delete_friend(
-    friend_username: str, username: str = Depends(get_current_username)
+    friend_userid: str, userid: str = Depends(get_current_userid)
 ):
-    """Remove an existing friend connection between the current user and the given username.
+    """Remove an existing friend connection between the current user and the given userid.
 
     This removes both directional rows from the `friends` table. If the users are not
     friends, a failure response is returned.
@@ -518,8 +546,8 @@ async def delete_friend(
     cur = conn.cursor()
     # check existing friendship (current user -> friend)
     cur.execute(
-        "SELECT 1 FROM friends WHERE user = ? AND friend = ?",
-        (username, friend_username),
+        "SELECT 1 FROM friends WHERE userid1 = ? AND userid2 = ?",
+        (userid, friend_userid),
     )
     if not cur.fetchone():
         conn.close()
@@ -527,10 +555,10 @@ async def delete_friend(
 
     # delete both directions (if present)
     cur.execute(
-        "DELETE FROM friends WHERE user = ? AND friend = ?", (username, friend_username)
+        "DELETE FROM friends WHERE userid1 = ? AND userid2 = ?", (userid, friend_userid)
     )
     cur.execute(
-        "DELETE FROM friends WHERE user = ? AND friend = ?", (friend_username, username)
+        "DELETE FROM friends WHERE userid1 = ? AND userid2 = ?", (friend_userid, userid)
     )
     conn.commit()
     conn.close()
@@ -539,28 +567,28 @@ async def delete_friend(
 
 
 @app.post("/location")
-async def location(loc: Location, username: str = Depends(get_current_username)):
+async def location(loc: Location, userid: str = Depends(get_current_userid)):
     """Store the caller's location in `locations`, prune older entries (15 minutes),
     and return all recent location entries for the caller's friends (looked up from `friends`).
 
     Request shape: { latitude: float, longitude: float }
-    Response: list of { username, latitude, longitude, ts }
+    Response: list of { userid, latitude, longitude, ts }
     """
     ts = datetime.now(UTC).isoformat()
     conn = get_conn()
     # insert own location row
     conn.execute(
-        "INSERT INTO locations(username, latitude, longitude, ts) VALUES (?, ?, ?, ?)",
-        (username, loc.latitude, loc.longitude, ts),
+        "INSERT INTO locations(userid, latitude, longitude, ts) VALUES (?, ?, ?, ?)",
+        (userid, loc.latitude, loc.longitude, ts),
     )
 
     # delete_old_location_entries()
 
     # determine friends from the friends table for the current user
     cur_f = conn.execute(
-        "SELECT friend FROM friends WHERE user = ? ORDER BY friend", (username,)
+        "SELECT userid2 FROM friends WHERE userid1 = ? ORDER BY userid2", (userid,)
     )
-    friends = [r["friend"] for r in cur_f.fetchall()]
+    friends = [r["userid2"] for r in cur_f.fetchall()]
     if not friends:
         conn.commit()
         conn.close()
@@ -569,12 +597,12 @@ async def location(loc: Location, username: str = Depends(get_current_username))
     # query locations for the friends
     placeholders = ",".join("?" for _ in friends)
     cur = conn.execute(
-        f"SELECT username, latitude, longitude, ts FROM locations WHERE username IN ({placeholders}) ORDER BY ts",
+        f"SELECT userid, latitude, longitude, ts FROM locations WHERE userid IN ({placeholders}) ORDER BY ts",
         tuple(friends),
     )
     rows = [
         {
-            "username": r["username"],
+            "userid": r["userid"],
             "location": {"latitude": r["latitude"], "longitude": r["longitude"]},
             "ts": r["ts"],
         }
@@ -587,9 +615,9 @@ async def location(loc: Location, username: str = Depends(get_current_username))
 
 
 @app.get("/events")
-async def events(request: Request, username: str = Depends(get_current_username)):
+async def events(request: Request, userid: str = Depends(get_current_userid)):
     q: asyncio.Queue = asyncio.Queue(maxsize=32)
-    sse_queues.setdefault(username, set()).add(q)
+    sse_queues.setdefault(userid, set()).add(q)
 
     async def event_generator():
         try:
@@ -607,7 +635,7 @@ async def events(request: Request, username: str = Depends(get_current_username)
                 yield f"data: {data}\n\n"
         finally:
             try:
-                sse_queues.get(username, set()).discard(q)
+                sse_queues.get(userid, set()).discard(q)
             except Exception:
                 pass
 

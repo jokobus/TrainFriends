@@ -330,7 +330,7 @@
     },
     "/friends": {
       "get": {
-        "summary": "List usernames of confirmed friends",
+        "summary": "List userids of confirmed friends",
         "security": [
           {
             "cookieAuth": []
@@ -338,7 +338,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Array of friend usernames",
+            "description": "Array of friend userids",
             "content": {
               "application/json": {
                 "schema": {
@@ -350,7 +350,7 @@
         }
       }
     },
-    "/friends/{friend_username}": {
+    "/friends/{friend_userid}": {
       "delete": {
         "summary": "Delete a friend connection",
         "security": [
@@ -360,13 +360,13 @@
         ],
         "parameters": [
           {
-            "name": "friend_username",
+            "name": "friend_userid",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string"
             },
-            "description": "Username of the friend to remove"
+            "description": "UserID of the friend to remove"
           }
         ],
         "responses": {
@@ -398,9 +398,9 @@
     "schemas": {
       "SignupRequest": {
         "type": "object",
-        "required": ["username", "password"],
+        "required": ["userid", "password"],
         "properties": {
-          "username": { "type": "string", "example": "alice123" },
+          "userid": { "type": "string", "example": "alice123" },
           "password": { "type": "string", "format": "password", "example": "P@ssw0rd!" }
         }
       },
@@ -413,9 +413,9 @@
       },
       "LoginRequest": {
         "type": "object",
-        "required": ["username", "password"],
+        "required": ["userid", "password"],
         "properties": {
-          "username": { "type": "string", "example": "alice123" },
+          "userid": { "type": "string", "example": "alice123" },
           "password": { "type": "string", "format": "password", "example": "P@ssw0rd!" }
         }
       },
@@ -426,22 +426,22 @@
           "detail": { "type": "string", "example": "Logged in." }
         }
       },
-      "AuthCheckResponse": {
+        "AuthCheckResponse": {
           "type": "object",
-          "required": ["username"],
+          "required": ["userid"],
           "properties": {
-              "username": { "type": "string", "example": "alice123" }
+            "userid": { "type": "string", "example": "alice123" }
           }
-      },
+        },
       "FriendList": {
           "type": "array",
           "items": { "type": "string", "example": "bob456" }
       },
       "FriendRequestCreate": {
         "type": "object",
-        "required": ["friendUsername"],
+        "required": ["friendUserID"],
         "properties": {
-            "friendUsername": { "type": "string", "example": "bob456" }
+            "friendUserID": { "type": "string", "example": "bob456" }
         }
       },
       "FriendRequest": {
@@ -481,9 +481,9 @@
       },
       "LocationUser": {
         "type": "object",
-        "required": ["username", "location", "ts"],
+        "required": ["userid", "location", "ts"],
         "properties": {
-          "username": { "type": "string" },
+          "userid": { "type": "string" },
           "location": { "$ref": "#/components/schemas/Location" },
           "ts": { "type": "string", "format": "date-time" }
         }
