@@ -60,11 +60,7 @@ class Location(BaseModel):
 
 @asynccontextmanager 
 async def lifespan(app: FastAPI):
-    ## Startup
-    args = parse_args()
-    global config
-    config = Config(args.host, args.port, Path(args.data).expanduser().resolve())
-    
+    ## Startup    
     # initialize DB
     await init_db()
 
