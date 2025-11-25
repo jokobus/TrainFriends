@@ -2,7 +2,11 @@ from fastapi import FastAPI, Request, Response, Depends, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 import uuid
+from contextlib import asynccontextmanager
 import asyncio
+import uvicorn
+import argparse
+import sys
 import json
 from typing import Set, Optional
 from datetime import datetime, timedelta, UTC
@@ -16,28 +20,18 @@ from starlette.middleware.cors import CORSMiddleware
 cred = credentials.Certificate("firebase.json")
 firebase_admin.initialize_app(cred)
 
-
-app = FastAPI(
-    title="TrainFriends - Simple Server",
-    middleware=[
-        Middleware(
-            CORSMiddleware,
-            allow_origins=["http://localhost:5173"],
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
-    ],
-)
-
-# Simple SQLite DB (file stored next to this module)
-# Default path (can be overridden with --data flag when running as a script)
-DB_PATH = Path(__file__).resolve().parent / "data.db"
 db_initialized = False
 
 # SSE per-user queues for pushing events (in-memory)
 sse_queues: dict[str, Set[asyncio.Queue]] = {}
 
+class Config: 
+    def __init__(self, host: str, port: int, db_path: str):
+        self.host = host
+        self.port = port
+        self.db_path = db_path
+
+config = None
 
 class SignupRequest(BaseModel):
     username: str
@@ -63,25 +57,74 @@ class Location(BaseModel):
     latitude: float
     longitude: float
 
+
+@asynccontextmanager 
+async def lifespan(app: FastAPI):
+    ## Startup
+    args = parse_args()
+    global config
+    config = Config(args.host, args.port, Path(args.data).expanduser().resolve())
+    
+    # initialize DB
+    await init_db()
+
+    # create and store cleanup tasks on app.state in uvicorn's loop
+    app.state.cleanup_tasks = []
+    app.state.cleanup_tasks.append(asyncio.create_task(delete_old_session_entries()))
+    app.state.cleanup_tasks.append(asyncio.create_task(delete_old_location_entries()))
+
+    yield
+    
+    ## Shutdown
+    # cancel and await background tasks created at startup
+    tasks = getattr(app.state, "cleanup_tasks", [])
+    for t in tasks:
+        t.cancel()
+    if tasks:
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
+app = FastAPI(
+    title="TrainFriends - Simple Server",
+    lifespan=lifespan, 
+    middleware=[
+        Middleware(
+            CORSMiddleware,
+            allow_origins=["http://localhost:5173"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    ],
+)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run TrainFriends server")
+    parser.add_argument("--host", default="0.0.0.0", help="Host to bind uvicorn to")
+    parser.add_argument("--port", default=8000, type=int, help="Port to bind uvicorn to")
+    parser.add_argument("--data", default=Path(__file__).resolve().parent / "data.db", help="Path to sqlite data file to use (overrides default)")
+    return parser.parse_args()
+
 def get_conn():
-    # Ensure DB is initialized for the chosen DB_PATH before opening connections
+    # Ensure DB is initialized for the chosen db path before opening connections
     global db_initialized
     if not db_initialized:
         init_db()
-    conn = sqlite3.connect(str(DB_PATH))
+    conn = sqlite3.connect(str(config.db_path))
     conn.row_factory = sqlite3.Row
     return conn
 
 
-def init_db():
-    """Create DB file and tables for the current DB_PATH. Safe to call multiple times.
+async def init_db():
+    """Create DB file and tables for the current db path. Safe to call multiple times.
 
     This function does not call get_conn() to avoid recursion; it opens
     a direct sqlite3 connection and marks the DB as initialized.
     """
     global db_initialized
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(DB_PATH))
+    config.db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(config.db_path))
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     # users: store last location inline for simplicity
@@ -93,6 +136,7 @@ def init_db():
 		)
 		"""
     )
+    
     # new table to store multiple location entries per user; entries are pruned after 15 minutes
     cur.execute(
         """
@@ -104,14 +148,17 @@ def init_db():
 		)
 		"""
     )
+     
     cur.execute(
         """
-		CREATE TABLE IF NOT EXISTS sessions (
-			session_id TEXT PRIMARY KEY,
-			username TEXT NOT NULL
-		)
-		"""
+        CREATE TABLE IF NOT EXISTS sessions (
+            session_id TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            ts TEXT NOT NULL
+        )
+        """
     )
+    
     cur.execute(
         """
 		CREATE TABLE IF NOT EXISTS friend_requests (
@@ -139,10 +186,11 @@ def init_db():
 
 
 def create_session(username: str) -> str:
+    ts = datetime.now(UTC).isoformat()
     sid = uuid.uuid4().hex
     conn = get_conn()
     conn.execute(
-        "INSERT INTO sessions(session_id, username) VALUES (?, ?)", (sid, username)
+        "INSERT INTO sessions(session_id, username, ts) VALUES (?, ?, ?)", (sid, username, ts)
     )
     conn.commit()
     conn.close()
@@ -168,18 +216,56 @@ async def get_current_username(request: Request) -> str:
         )
     return username
 
+
 async def delete_old_location_entries(max_time:int=15, interval:int=60):
     """Delete old location entries. Executed all 60 seconds and delete entries older than 15 minutes. 
 
     :param max_time: Time in minutes. All older entries are deleted. 
+    :param interval: Interval (in seconds) in which the timestamps are checked. 
     """
+    if max_time <= 0:
+        return
+
     while True: 
-        conn = get_conn()
-        cutoff = (datetime.now(UTC) - timedelta(minutes=max_time)).isoformat()
-        conn.execute("DELETE FROM locations WHERE ts < ?", (cutoff,))
-        conn.commit()
-        conn.close()
+        try: 
+            cutoff = (datetime.now(UTC) - timedelta(minutes=max_time)).isoformat()
+            # pass the callable and its argument to asyncio.to_thread
+            await asyncio.to_thread(_delete_old_location_entries, cutoff)
+        except Exception as e: 
+            print(f"Error in cleaning up locations with timestamp < {cutoff} from TABLE sessions. {e}")
         await asyncio.sleep(interval)
+
+def _delete_old_location_entries(cutoff): 
+    conn = get_conn()
+    conn.execute("DELETE FROM locations WHERE ts < ? OR ts IS NULL", (cutoff,))
+    conn.commit()
+    conn.close()
+
+
+async def delete_old_session_entries(max_time:int=30, interval:int=60):
+    """Delete old session entries. Executed all 60 seconds and delete entries older than 30 days
+
+    :param max_time: Time in days. All older entries are deleted. 
+    :param interval: Interval (in seconds) in which the timestamps are checked. 
+    """
+    if max_time <= 0: 
+        return
+    
+    while True: 
+        cutoff = (datetime.now(UTC) - timedelta(days=max_time)).isoformat()
+        try: 
+                # pass the callable and its argument to asyncio.to_thread
+                await asyncio.to_thread(_delete_old_session_entries, cutoff)
+        except Exception as e: 
+            print(f"Error in cleaning up sessions with timestamp < {cutoff} from TABLE sessions. {e}")
+        await asyncio.sleep(interval)
+
+def _delete_old_session_entries(cutoff): 
+    conn = get_conn()
+    conn.execute("DELETE FROM sessions WHERE ts < ? OR ts IS NULL", (cutoff,))
+    conn.commit()
+    conn.close()
+
 
 @app.post("/signup", response_model=GenericResponse)
 async def signup(req: SignupRequest):
@@ -205,9 +291,14 @@ async def login(req: LoginRequest, response: Response):
     row = cur.fetchone()
     conn.close()
     if not row or row["password"] != req.password:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
-        )
+        #raise HTTPException(
+        #    status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        #)
+        # return a JSON error response instead of raising an exception object
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={
+            "success": False,
+            "detail": "Invalid credentials"
+        })
     sid = create_session(req.username)
     response.set_cookie(key="session_id", value=sid, httponly=True, path="/")
     return {"success": True, "detail": "Logged in."}
@@ -436,7 +527,7 @@ async def delete_friend(
     )
     if not cur.fetchone():
         conn.close()
-        return HTTPException(success=False, message="Not friends")
+        raise HTTPException(status_code=400, detail="Not friends")
 
     # delete both directions (if present)
     cur.execute(
@@ -448,7 +539,7 @@ async def delete_friend(
     conn.commit()
     conn.close()
 
-    return GenericResponse(success=True, message="Friend removed")
+    return GenericResponse(success=True, detail="Friend removed")
 
 
 @app.post("/location")
@@ -528,31 +619,6 @@ async def events(request: Request, username: str = Depends(get_current_username)
 
 
 if __name__ == "__main__":
-    import uvicorn
-    import argparse
-    import sys
-
-    parser = argparse.ArgumentParser(description="Run TrainFriends server")
-    parser.add_argument("--host", default="0.0.0.0", help="Host to bind uvicorn to")
-    parser.add_argument(
-        "--port", default=8000, type=int, help="Port to bind uvicorn to"
-    )
-    parser.add_argument(
-        "--data",
-        default=None,
-        help="Path to sqlite data file to use (overrides default)",
-    )
-    args = parser.parse_args()
-
-    # If user provided --data, override DB_PATH before initializing DB
-    if args.data:
-        DB_PATH = Path(args.data).expanduser().resolve()
-
-    # Ensure DB is initialized for the chosen path
-    init_db()
-    #asyncio.create_task(delete_old_location_entries())
-
-    # Minimal startup scheduling
-    app.add_event_handler("startup", lambda: asyncio.create_task(delete_old_location_entries()))
-
-    uvicorn.run(app, host=args.host, port=args.port)
+    args = parse_args()
+    config = Config(args.host, args.port, Path(args.data).expanduser().resolve())
+    uvicorn.run(app, host=config.host, port=config.port)
